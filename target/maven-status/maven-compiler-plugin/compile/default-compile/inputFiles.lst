@@ -1,1 +1,7 @@
-E:\project\OrderSystem\src\main\java\io\order\backend\OrderApplication.java
+C:\projects\personal\OrderSystem\src\main\java\io\order\backend\inventory\api\InventoryController.java
+C:\projects\personal\OrderSystem\src\main\java\io\order\backend\inventory\application\InventoryService.java
+C:\projects\personal\OrderSystem\src\main\java\io\order\backend\inventory\domain\Product.java
+C:\projects\personal\OrderSystem\src\main\java\io\order\backend\inventory\domain\StockReservation.java
+C:\projects\personal\OrderSystem\src\main\java\io\order\backend\inventory\infrastructure\PostgresProductRepository.java
+C:\projects\personal\OrderSystem\src\main\java\io\order\backend\inventory\infrastructure\ProductRepository.java
+C:\projects\personal\OrderSystem\src\main\java\io\order\backend\OrderApplication.java
