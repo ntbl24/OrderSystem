@@ -9,11 +9,13 @@ import io.order.backend.product.dto.ProductDTO;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface ProductMapper {
-
-    @Mapping (target = "id", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deleted", ignore = true)
-    ProductDTO toDTO(Product product);
     Product toEntity(ProductDTO productDTO);
+    
+    ProductDTO toDTO(Product product);
+
+    
 }

@@ -10,7 +10,7 @@ import lombok.Data;
 @Data 
 public class ProductDTO {
     @NotBlank(message = "Product name is required")
-    private String name;
+    private String title;
     @NotBlank(message = "Category is required")
     private String category;
     @NotBlank(message = "Description is required")

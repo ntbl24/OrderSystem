@@ -1,10 +1,8 @@
 package io.order.backend.product.application;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -52,9 +50,16 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    public Optional<ProductDTO> getProductBySku(String sku) {
+    public ProductDTO getProductById(String id){
+        return productRepository.findById(id)
+                .map(productMapper::toDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+    }
+
+    public ProductDTO getProductBySku(String sku) {
         return productRepository.findBySku(sku)
-                .map(productMapper::toDTO);
+                .map(productMapper::toDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with sku: " + sku));
     }
 
     public List<ProductDTO> getAllProducts() {

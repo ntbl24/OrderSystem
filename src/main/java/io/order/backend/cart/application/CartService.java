@@ -15,7 +15,7 @@ import io.order.backend.cart.mapper.CartMapper;
 import io.order.backend.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 
-@Service 
+@Service
 @RequiredArgsConstructor 
 public class CartService {
     private final CartRepository cartRepository;
