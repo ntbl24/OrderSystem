@@ -1,74 +1,35 @@
 package io.order.backend.order.api;
 
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import io.order.backend.common.response.ApiResponse;
-import io.order.backend.order.application.OrderService;
+import io.order.backend.order.application.port.in.OrderUseCase;
 import io.order.backend.order.dto.OrderDTO;
-import jakarta.validation.Valid;
-
+import io.order.backend.common.response.ApiResponse;
+import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
 public class OrderController {
-    private final OrderService orderService;
-
-    @PostMapping
-    public ResponseEntity<ApiResponse<OrderDTO>> createOrder(@Valid @RequestBody OrderDTO orderDTO) {
-        ApiResponse<OrderDTO> response = ApiResponse.success(orderService.createOrder(orderDTO));
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+    private final OrderUseCase service;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<OrderDTO>> getOrderById(@PathVariable String id) {
-        ApiResponse<OrderDTO> response = ApiResponse.success(orderService.getOrderById(id));
-        return ResponseEntity.ok(response);
+    public ApiResponse<OrderDTO> get(@PathVariable String id) {
+        return ApiResponse.success(service.getOrderById(id));
     }
 
-    @GetMapping("/number/{orderNumber}")
-    public ResponseEntity<ApiResponse<OrderDTO>> getOrderByOrderNumber(@PathVariable String orderNumber) {
-        ApiResponse<OrderDTO> response = ApiResponse.success(orderService.getOrderByOrderNumber(orderNumber));
-        return ResponseEntity.ok(response);
+    @GetMapping("/number/{number}")
+    public ApiResponse<OrderDTO> byNumber(@PathVariable String number) {
+        return ApiResponse.success(service.getOrderByOrderNumber(number));
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersByUserId(@PathVariable String userId) {
-        ApiResponse<List<OrderDTO>> response = ApiResponse.success(orderService.getOrdersByUserId(userId));
-        return ResponseEntity.ok(response);
+    public ApiResponse<List<OrderDTO>> list(@PathVariable String userId) {
+        return ApiResponse.success(service.getOrdersByUserId(userId));
     }
 
-    @GetMapping("/status/{orderStatus}")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersByStatus(@PathVariable String orderStatus) {
-        ApiResponse<List<OrderDTO>> response = ApiResponse.success(orderService.getOrdersByStatus(orderStatus));
-        return ResponseEntity.ok(response);
-    }
-
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<OrderDTO>> updateOrderStatus(
-            @PathVariable String id,
-            @RequestParam String orderStatus) {
-        ApiResponse<OrderDTO> response = ApiResponse.success(orderService.updateOrderStatus(id, orderStatus));
-        return ResponseEntity.ok(response);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<OrderDTO>> updateOrder(
-            @PathVariable String id,
-            @Valid @RequestBody OrderDTO orderDTO) {
-        ApiResponse<OrderDTO> response = ApiResponse.success(orderService.updateOrder(id, orderDTO));
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteOrder(@PathVariable String id) {
-        orderService.deleteOrder(id);
-        ApiResponse<Void> response = ApiResponse.success(null);
-        return ResponseEntity.ok(response);
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<OrderDTO> cancel(@PathVariable String id) {
+        return ApiResponse.success(service.cancel(id));
     }
 }

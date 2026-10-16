@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-10-03T09:47:04+0700",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.100.v20260826-1225, environment: Java 21.0.12.1 (Eclipse Adoptium)"
+    date = "2026-10-16T09:39:18+0700",
+    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.200.v20260930-0211, environment: Java 25.0.4.1 (Eclipse Adoptium)"
 )
 @Component
 public class OrderMapperImpl implements OrderMapper {
@@ -25,6 +25,8 @@ public class OrderMapperImpl implements OrderMapper {
 
         Order order = new Order();
 
+        order.setSellerId( dto.getSellerId() );
+        order.setExpiresAt( dto.getExpiresAt() );
         order.setUserId( dto.getUserId() );
         order.setOrderNumber( dto.getOrderNumber() );
         order.setItems( orderItemDTOListToOrderItemList( dto.getItems() ) );
@@ -50,6 +52,8 @@ public class OrderMapperImpl implements OrderMapper {
         OrderDTO orderDTO = new OrderDTO();
 
         orderDTO.setEstimatedDeliveryDate( entity.getEstimatedDeliveryDate() );
+        orderDTO.setExpiresAt( entity.getExpiresAt() );
+        orderDTO.setId( entity.getId() );
         orderDTO.setItems( orderItemListToOrderItemDTOList( entity.getItems() ) );
         orderDTO.setNotes( entity.getNotes() );
         orderDTO.setOrderDate( entity.getOrderDate() );
@@ -57,9 +61,11 @@ public class OrderMapperImpl implements OrderMapper {
         orderDTO.setOrderStatus( entity.getOrderStatus() );
         orderDTO.setPaymentMethod( entity.getPaymentMethod() );
         orderDTO.setPaymentStatus( entity.getPaymentStatus() );
+        orderDTO.setSellerId( entity.getSellerId() );
         orderDTO.setShippingAddress( entity.getShippingAddress() );
         orderDTO.setShippingCost( entity.getShippingCost() );
         orderDTO.setSubtotal( entity.getSubtotal() );
+        orderDTO.setTotal( entity.getTotal() );
         orderDTO.setUserId( entity.getUserId() );
 
         return orderDTO;
@@ -90,6 +96,7 @@ public class OrderMapperImpl implements OrderMapper {
         orderItem.setProductId( item.getProductId() );
         orderItem.setProductName( item.getProductName() );
         orderItem.setQuantity( item.getQuantity() );
+        orderItem.setSku( item.getSku() );
         orderItem.setSubtotal( item.getSubtotal() );
         orderItem.setUnitPrice( item.getUnitPrice() );
 
@@ -107,6 +114,7 @@ public class OrderMapperImpl implements OrderMapper {
         orderItemDTO.setProductId( item.getProductId() );
         orderItemDTO.setProductName( item.getProductName() );
         orderItemDTO.setQuantity( item.getQuantity() );
+        orderItemDTO.setSku( item.getSku() );
         orderItemDTO.setSubtotal( item.getSubtotal() );
         orderItemDTO.setUnitPrice( item.getUnitPrice() );
 
@@ -123,6 +131,7 @@ public class OrderMapperImpl implements OrderMapper {
         orderItem.setProductId( orderItemDTO.getProductId() );
         orderItem.setProductName( orderItemDTO.getProductName() );
         orderItem.setQuantity( orderItemDTO.getQuantity() );
+        orderItem.setSku( orderItemDTO.getSku() );
         orderItem.setSubtotal( orderItemDTO.getSubtotal() );
         orderItem.setUnitPrice( orderItemDTO.getUnitPrice() );
 

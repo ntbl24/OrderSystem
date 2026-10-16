@@ -21,9 +21,12 @@ public class ProductDTO {
     private BigDecimal price;
 
     @NotNull(message = "Stock is required")
-    @Positive (message = "Stock must be greater than 0")
+    @jakarta.validation.constraints.PositiveOrZero(message = "Stock must not be negative")
     private int stock;
 
     @NotBlank(message = "SKU is required")
     private String sku;
+    private String id;
+    @NotBlank(message = "Seller ID is required")
+    private String sellerId;
 }

@@ -1,199 +1,148 @@
 package io.order.backend.payment.application;
 
-
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.Optional;
-
-import org.springframework.data.crossstore.ChangeSetPersister.NotFoundException;
+import io.order.backend.common.application.port.CurrentBuyerPort;
+import io.order.backend.common.application.port.IdempotencyPort;
+import io.order.backend.common.application.port.OutboxPort;
+import io.order.backend.payment.application.port.*;
+import io.order.backend.payment.domain.Payment;
+import io.order.backend.payment.dto.PaymentResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.json.JsonMapper;
+import java.time.Instant;
+import java.util.*;
 
-import io.order.backend.common.exception.InternalException;
-import io.order.backend.common.exception.InvalidInputException;
-import io.order.backend.common.exception.ResourceNotFoundException;
-import io.order.backend.payment.domain.Payment;
-import io.order.backend.payment.dto.CallbackPaymentDTO;
-import io.order.backend.payment.dto.PaymentDTO;
-import io.order.backend.payment.dto.PaymentIntentDTO;
-import io.order.backend.payment.dto.QueryPaymentResponseRawDTO;
-import io.order.backend.payment.dto.RefundInfoDTO;
-import io.order.backend.payment.dto.RefundResponseDTO;
-import io.order.backend.payment.infrastructure.PaymentRepository;
-import io.order.backend.payment.mapper.PaymentMapper;
-import io.order.backend.payment.provider.PaymentFactory;
-import io.order.backend.payment.provider.ProviderPayment;
-import lombok.RequiredArgsConstructor;
+@Service
+public class PaymentService implements PaymentUseCase {
+    private final CurrentBuyerPort buyer;
+    private final IdempotencyPort keys;
+    private final PayableOrderPort orders;
+    private final PaymentStore store;
+    private final PaymentGateway gateway;
+    private final OutboxPort outbox;
+    private final JsonMapper json;
 
-@Service 
-@RequiredArgsConstructor 
-public class PaymentService {
-    private final PaymentRepository paymentRepository;
-    private final PaymentMapper paymentMapper;
-    private final PaymentFactory paymentFactory;
-
-    @Transactional 
-    public PaymentDTO createPayment(PaymentDTO paymentDTO) {
-        Payment payment = paymentMapper.toEntity(paymentDTO);
-        payment = paymentRepository.save(payment);
-        return paymentMapper.toDto(payment);
-    }
-    @Transactional
-    public PaymentDTO upadtePayment(String id, PaymentDTO paymentDTO) {
-        Payment existedPayment = paymentRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
-        Payment updatedPayment = paymentMapper.toEntity(paymentDTO);
-        updatedPayment.setId(id);
-        updatedPayment = paymentRepository.save(updatedPayment);
-        return paymentMapper.toDto(updatedPayment);
+    public PaymentService(CurrentBuyerPort buyer, IdempotencyPort keys, PayableOrderPort orders, PaymentStore store,
+            PaymentGateway gateway, OutboxPort outbox, JsonMapper json) {
+        this.buyer = buyer;
+        this.keys = keys;
+        this.orders = orders;
+        this.store = store;
+        this.gateway = gateway;
+        this.outbox = outbox;
+        this.json = json;
     }
 
     @Transactional
-    public void deletePayment(String id) {
-        if (!paymentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Payment not found with id: " + id);
-        }
-        paymentRepository.deleteById(id);
+    public PaymentResponse create(String orderId, String key, String ip) {
+        String buyerId = buyer.buyerId();
+        if (orderId == null || orderId.isBlank() || orderId.length() > 255)
+            throw new IllegalArgumentException("Invalid order ID");
+        if (key == null || key.isBlank() || key.length() > 128)
+            throw new IllegalArgumentException("Invalid idempotency key");
+        // Replay is scoped to the same authenticated buyer by the shared idempotency
+        // service.
+        orders.lockForCallback(orderId);
+        return keys.execute(buyerId, "PAYMENT_ATTEMPT", key, new CreateCommand(orderId), PaymentResponse.class, () -> {
+            var order = orders.lockForPayment(orderId, buyerId);
+            if (store.orderSettled(orderId))
+                throw new IllegalStateException("Order already paid");
+            Instant now = Instant.now();
+            Instant expires = order.expiresAt().isBefore(now.plusSeconds(900)) ? order.expiresAt()
+                    : now.plusSeconds(900);
+            if (!expires.isAfter(now))
+                throw new IllegalStateException("Order expired");
+            var p = new Payment(UUID.randomUUID().toString(), orderId, buyerId, order.amount(), order.currency(),
+                    UUID.randomUUID().toString().replace("-", ""), now, expires, Payment.Status.PENDING, null,
+                    Payment.RefundStatus.NONE, null, null, null, null);
+            store.save(p);
+            return PaymentResponse.from(p, gateway.paymentUrl(p, ip));
+        });
     }
 
-    public Optional<PaymentDTO> getPaymentById(String id) {
-        return paymentRepository.findById(id)
-                .map(paymentMapper::toDto);
-    }
-
-    public Optional<PaymentDTO> getPaymentByOrderId(String orderId) {
-        return paymentRepository.findByOrderId(orderId)
-            .map(paymentMapper::toDto);
-    }
-
-    public Optional<PaymentDTO> getPaymentByPaymentIntentId(String paymentIntentId){
-        return paymentRepository.findByPaymentIntentId(paymentIntentId)
-            .map(paymentMapper::toDto);
-    }
-
-    
-    @Transactional
-    public PaymentDTO processPayment(PaymentDTO paymentDTO){
-        ProviderPayment providerPayment = paymentFactory.getProvider(paymentDTO.getPaymentMethod().toUpperCase());
-        PaymentIntentDTO paymentIntent;
-        try{
-            paymentIntent = providerPayment.createPaymentUrl(paymentDTO);
-        } catch (Exception e){
-            throw new InternalException("Failed to create payment intent", e);
-        }
-        Payment payment = paymentMapper.toEntity(paymentDTO);
-        payment.setPaymentIntentId(paymentIntent.getTransactionId());
-        payment.setStatus("pending");
-        payment.setPaymentDate(LocalDateTime.now());
-        payment.setReceiptUrl(paymentIntent.getPaymentUrl());
-        paymentRepository.save(payment);
-        return paymentMapper.toDto(payment);
+    @Transactional(readOnly = true)
+    public PaymentResponse get(String id) {
+        var p = store.find(id).orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+        if (!p.buyerId().equals(buyer.buyerId()))
+            throw new org.springframework.security.access.AccessDeniedException("Payment does not belong to buyer");
+        return PaymentResponse.from(p, null);
     }
 
     @Transactional
-    public void handleCallback(Map<String, String> callbackBody) throws Exception {
-
-        Payment payment = paymentRepository.findByPaymentIntentId(extractTxnRef(callbackBody))
-            .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + extractTxnRef(callbackBody)));
-
-        ProviderPayment providerPayment = paymentFactory.getProvider(payment.getPaymentMethod().toUpperCase());
-
-        try{
-            CallbackPaymentDTO callback = providerPayment.callback(callbackBody);
-            if (payment.getStatus().equals("success")) {
-                return;
-            }
-
-            payment.setProviderTransId(callback.getProviderTransactionId());
-            payment.setUpdatedAt(LocalDateTime.now());
-
-            if (callback.getResponseCode() != 0) {
-                payment.setStatus("failed");
-                paymentRepository.save(payment);
-                return;
-            }
-            payment.setStatus("success");
-            paymentRepository.save(payment);
-        } catch (Exception e){
-            payment.setStatus("failed");
-            payment.setErrorMessage(e.getMessage());
-            paymentRepository.save(payment);
+    public NotificationResult ipn(PaymentNotification notification) {
+        if (!notification.signatureValid())
+            return NotificationResult.INVALID_SIGNATURE;
+        var found = store.byReference(notification.transactionReference());
+        if (found.isEmpty())
+            return NotificationResult.NOT_FOUND;
+        if (!matches(found.get(), notification))
+            return NotificationResult.INVALID_DATA;
+        orders.lockForCallback(found.get().orderId());
+        var p = store.lock(found.get().id());
+        if (p.status() == Payment.Status.SUCCEEDED) {
+            if (notification.successful() && !Objects.equals(p.providerTransactionNo(), notification.providerTransactionNo()))
+                return NotificationResult.CONFLICTING_TRANSACTION;
+            return NotificationResult.ALREADY_CONFIRMED;
         }
-    } 
-
-    public PaymentDTO refundPayment(String id, String reason){
-        Payment payment = paymentRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
-
-        if (!payment.getStatus().equals("success")) {
-            throw new InvalidInputException("Only SUCCESS payments can be refunded");
-        }
-        if (payment.getProviderTransId() == null) {
-            throw new InternalException("No transaction id found for refund");
-        }
-
-        try{
-            RefundInfoDTO refundRequest = RefundInfoDTO.builder()
-            .transactionId(payment.getPaymentIntentId())
-            .amount(payment.getAmount().longValue())
-            .transactionDate(payment.getCreatedAt()
-                .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-                .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")))
-            .providerTransactionId(payment.getProviderTransId())
-            .orderInfo(payment.getDescription())
-            .createBy(payment.getUserId())
-            .ipAddress("10.0.0.0")
-            .type("FULL")
-            .build();
-
-            ProviderPayment providerPayment = paymentFactory.getProvider(payment.getPaymentMethod().toUpperCase());
-
-            providerPayment.refund(refundRequest);
-            payment.setStatus("refunded");
-            payment.setDescription("Refunded: " + reason);
-            paymentRepository.save(payment);
-            return paymentMapper.toDto(payment);
-        } catch (Exception e){
-            payment.setStatus("refunded_failed");
-            payment.setErrorMessage(e.getMessage());
-            paymentRepository.save(payment);
-            return paymentMapper.toDto(payment);
-        }
+        recordObservation(p, notification.successful(), notification.providerTransactionNo());
+        return NotificationResult.CONFIRMED;
     }
 
-    private String extractTxnRef(Map<String, String> callbackBody) {
-        if(callbackBody.get("app_trans_id") != null) {
-            return callbackBody.get("app_trans_id");
-        }
-        if(callbackBody.get("vnp_TxnRef") != null) {
-            return callbackBody.get("vnp_TxnRef");
-        }
-        return null;
+    @Transactional(readOnly = true)
+    public ReturnView returnView(PaymentNotification notification) {
+        if (!notification.signatureValid())
+            return new ReturnView(false, "INVALID", null);
+        var p = store.byReference(notification.transactionReference());
+        if (p.isEmpty() || !matches(p.get(), notification))
+            return new ReturnView(false, "INVALID", null);
+        return new ReturnView(true, p.get().status().name(),
+                "Payment confirmation is processed through IPN, not this page");
     }
 
-    public QueryPaymentResponseRawDTO queryPaymentStatus(String paymentIntentId) {
-        Payment payment = paymentRepository.findByPaymentIntentId(paymentIntentId)
-            .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentIntentId));
+    @Transactional
+    public PaymentResponse refund(String id, String key, String reason) {
+        if (key == null || key.isBlank() || key.length() > 128)
+            throw new IllegalArgumentException("Invalid idempotency key");
+        if (reason == null || reason.isBlank() || reason.length() > 255 || reason.contains("|") || reason.contains("\n")
+                || reason.contains("\r"))
+            throw new IllegalArgumentException("Invalid refund reason");
+        String actor = buyer.buyerId();
+        var found = store.find(id).orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+        orders.lockForCallback(found.orderId());
+        return keys.execute(actor, "FULL_REFUND", key, new RefundCommand(id, reason), PaymentResponse.class, () -> {
+            var p = store.lock(id);
+            var next = p.requestRefund(UUID.randomUUID().toString().replace("-", ""), actor, reason, Instant.now());
+            store.save(next);
+            if (p.refundStatus() == Payment.RefundStatus.NONE)
+                outbox.enqueue("PAYMENT_REFUND_REQUESTED", id, json.writeValueAsString(Map.of("paymentId", id)));
+            return PaymentResponse.from(next, null);
+        });
+    }
 
-        String transactionDate = payment.getCreatedAt()
-            .atZone(ZoneId.of("Asia/Ho_Chi_Minh"))
-            .format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+    void recordObservation(Payment p, boolean success, String providerNo) {
+        var next = p.observe(success, providerNo);
+        store.save(next);
+        if (success && p.status() != Payment.Status.SUCCEEDED)
+            emit("PAYMENT_SUCCEEDED", next);
+    }
 
-        ProviderPayment providerPayment = paymentFactory.getProvider(payment.getPaymentMethod().toUpperCase());
-        try{
-            QueryPaymentResponseRawDTO response = providerPayment.queryPaymentResult(paymentIntentId, transactionDate);
-            return QueryPaymentResponseRawDTO.builder()
-                .responseCode(response.getResponseCode())
-                .message(response.getMessage())
-                .transactionId(response.getTransactionId())
-                .providerTransactionId(response.getProviderTransactionId())
-                .amount(response.getAmount())
-                .build();
-        } catch(Exception e){
-            throw new InternalException("Failed to query payment status", e);
-        }
-        
+    void emit(String type, Payment p) {
+        outbox.enqueue(type, p.id(),
+                json.writeValueAsString(new PaymentEvent(p.orderId(), p.id(), p.amount(), p.currency())));
+    }
+
+    private static boolean matches(Payment payment, PaymentNotification notification) {
+        return notification.dataValid() && payment.transactionRef().equals(notification.transactionReference())
+                && notification.amount() != null && payment.amount().compareTo(notification.amount()) == 0
+                && payment.currency().equals(notification.currency());
+    }
+
+    public record CreateCommand(String orderId) {
+    }
+
+    public record RefundCommand(String paymentId, String reason) {
+    }
+
+    public record PaymentEvent(String orderId, String paymentId, java.math.BigDecimal amount, String currency) {
     }
 }

@@ -1,31 +1,24 @@
 package io.order.backend.shipping.application;
 
+import io.order.backend.shipping.application.port.in.ShipmentUseCase;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-import org.springframework.cglib.core.Local;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.order.backend.common.exception.ResourceNotFoundException;
-import io.order.backend.product.domain.Product;
-import io.order.backend.product.dto.ProductDTO;
-import io.order.backend.product.infrastructure.ProductRepository;
-import io.order.backend.product.mapper.ProductMapper;
 import io.order.backend.shipping.domain.Shipment;
 import io.order.backend.shipping.dto.ShipmentDTO;
-import io.order.backend.shipping.infrastructure.ShipmentRepository;
+import io.order.backend.shipping.application.port.out.ShipmentRepository;
 import io.order.backend.shipping.mapper.ShipmentMapper;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor 
-public class ShipmentService {
+public class ShipmentService implements ShipmentUseCase {
     private final ShipmentRepository shipmentRepository;
     private final ShipmentMapper shipmentMapper;
 

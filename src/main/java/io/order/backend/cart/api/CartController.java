@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.order.backend.cart.application.CartService;
+import io.order.backend.cart.application.port.in.CartUseCase;
 import io.order.backend.cart.dto.CartDTO;
 import io.order.backend.cart.dto.CartItemDTO;
 import io.order.backend.common.response.ApiResponse;
@@ -21,7 +21,18 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("api/v1/cart")
 @RequiredArgsConstructor 
 public class CartController {
-    private final CartService cartService;
+    private final CartUseCase cartService;
+
+    @org.springframework.web.bind.annotation.GetMapping("/{id}")
+    public ApiResponse<CartDTO> getCart(@PathVariable String id) {
+        return ApiResponse.success(cartService.getCartById(id).orElseThrow());
+    }
+
+    @org.springframework.web.bind.annotation.GetMapping("/user/{userId}")
+    public ApiResponse<CartDTO> getUserCart(@PathVariable String userId) {
+        return ApiResponse.success(cartService.getCartByUserId(userId).orElseThrow(() ->
+                new io.order.backend.common.exception.ResourceNotFoundException("Cart not found")));
+    }
     
     @PostMapping
     public ResponseEntity<ApiResponse<CartDTO>> createCart(@Valid @RequestBody CartDTO cartDTO){

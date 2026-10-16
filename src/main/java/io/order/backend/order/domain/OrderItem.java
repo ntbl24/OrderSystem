@@ -8,6 +8,7 @@ import lombok.Data;
 public class OrderItem{
     private String productId;
     private String productName;
+    private String sku;
     private int quantity;
     private BigDecimal unitPrice;
     private BigDecimal subtotal;

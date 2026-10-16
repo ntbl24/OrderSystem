@@ -15,6 +15,9 @@ import lombok.Data;
 public class OrderDTO {
     @NotNull(message = "User ID is required")
     private String userId;
+    private String id;
+    private String sellerId;
+    private java.time.Instant expiresAt;
 
     @NotBlank (message = "Order number is required")
     private String orderNumber;

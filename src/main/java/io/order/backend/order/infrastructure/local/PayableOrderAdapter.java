@@ -1,0 +1,24 @@
+package io.order.backend.order.infrastructure.local;
+
+import io.order.backend.payment.application.port.PayableOrderPort;
+import io.order.backend.order.application.port.in.PayableOrderUseCase;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.*;
+import lombok.RequiredArgsConstructor;
+
+@Component
+@RequiredArgsConstructor
+public class PayableOrderAdapter implements PayableOrderPort {
+    private final PayableOrderUseCase orders;
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public PayableOrder lockForPayment(String id, String buyerId) {
+        var order = orders.lockForPayment(id, buyerId);
+        return new PayableOrder(order.id(), order.buyerId(), order.amount(), order.currency(), order.expiresAt());
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void lockForCallback(String id) {
+        orders.lockForCallback(id);
+    }
+}

@@ -23,4 +23,9 @@
 hs_err_pid*
 replay_pid*
 
-*.yml
+target/
+target-maven/
+.env
+.env.*
+!.env.example
+.idea/

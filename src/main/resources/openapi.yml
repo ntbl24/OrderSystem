@@ -1,0 +1,183 @@
+openapi: 3.1.0
+info:
+  title: OrderSystem Purchase API
+  version: 1.0.0
+  description: PostgreSQL purchase and VNPay payment API. JWT issued externally; fresh schema only.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+paths:
+  /checkouts:
+    post:
+      summary: Create a single-seller order and reserve stock for 15 minutes
+      description: Server prices, integer VND and fixed 30000 VND shipping. Direct items only; cart is not cleared.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items, shippingAddress]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [productId, quantity]
+                    properties:
+                      productId: {type: string}
+                      quantity: {type: integer, minimum: 1}
+                shippingAddress: {type: string, maxLength: 2000}
+                notes: {type: [string, 'null'], maxLength: 2000}
+      responses:
+        '201': {$ref: '#/components/responses/OrderResult'}
+        '400': {$ref: '#/components/responses/Invalid'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /orders/{id}:
+    get:
+      summary: Read the authenticated buyer's order
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {$ref: '#/components/responses/OrderResult'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Order not found or not owned by buyer}
+  /orders/{id}/cancel:
+    post:
+      summary: Cancel an unpaid order and release reserved inventory exactly once
+      description: No request body or idempotency header. Repeated cancellation returns a terminal-state conflict.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {$ref: '#/components/responses/OrderResult'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {description: Order not found or not owned by buyer}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /payments:
+    post:
+      summary: Create a VNPay payment attempt for an unpaid order
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId: {type: string}
+      responses:
+        '201': {description: ApiResponse containing PaymentResponse and provider payment URL}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /payments/{id}:
+    get:
+      summary: Read the authenticated buyer's persisted payment state
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+      responses:
+        '200': {description: ApiResponse containing PaymentResponse}
+        '404': {description: Payment not found or not owned}
+  /payments/{id}/refunds:
+    post:
+      summary: Accept a durable full-refund intent (ADMIN only)
+      description: 202 means accepted, not settled. Uncertain provider outcomes require reconciliation/manual review.
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string}}
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: {type: string}
+      responses:
+        '202': {description: ApiResponse containing durable refund intent state}
+        '403': {description: ADMIN role required}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /payments/vnpay/ipn:
+    get:
+      summary: Authoritative VNPay IPN; provider signature and payment values validated
+      security: []
+      description: VNPay sends its signed vnp_* query parameters. Duplicate parameters are rejected.
+      responses:
+        '200':
+          description: VNPay protocol acknowledgement, not the application success envelope
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  RspCode: {type: string}
+                  Message: {type: string}
+  /payments/vnpay/return:
+    get:
+      summary: Browser return; read-only and never authoritative for settlement
+      security: []
+      responses:
+        '200': {description: Provider return result}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Scoped to buyer and operation. Same payload replays original DTO; different payload returns 409.
+      schema: {type: string, minLength: 1, maxLength: 128, pattern: '^[A-Za-z0-9._:-]+$'}
+  responses:
+    Invalid: {description: Invalid request}
+    Unauthorized: {description: Valid JWT required}
+    Conflict: {description: Business constraint, payload conflict or concurrent operation; retry with the same key}
+    OrderResult:
+      description: ApiResponse containing an order snapshot
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [success, message, data, timestamp]
+            properties:
+              success: {type: boolean}
+              message: {type: string}
+              timestamp: {type: string, format: date-time}
+              data: {$ref: '#/components/schemas/Order'}
+  schemas:
+    Order:
+      type: object
+      properties:
+        id: {type: string}
+        userId: {type: string}
+        sellerId: {type: string}
+        orderNumber: {type: string}
+        expiresAt: {type: string, format: date-time}
+        subtotal: {type: number}
+        shippingCost: {type: number}
+        total: {type: number}
+        shippingAddress: {type: string}
+        paymentMethod: {type: string}
+        paymentStatus: {type: string}
+        orderStatus: {type: string}
+        orderDate: {type: string, format: date-time}
+        estimatedDeliveryDate: {type: [string, 'null'], format: date-time}
+        notes: {type: [string, 'null']}
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: {type: string}
+              productName: {type: string}
+              sku: {type: string}
+              quantity: {type: integer}
+              unitPrice: {type: number}
+              subtotal: {type: number}

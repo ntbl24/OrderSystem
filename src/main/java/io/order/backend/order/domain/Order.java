@@ -6,7 +6,7 @@ import java.util.List;
 
 import io.order.backend.common.domain.BaseEntity;
 
-public class Order extends BaseEntity{
+public class Order extends BaseEntity {
     private String userId;
     private String orderNumber;
     private List<OrderItem> items;
@@ -19,41 +19,219 @@ public class Order extends BaseEntity{
     private LocalDateTime orderDate;
     private LocalDateTime estimatedDeliveryDate;
     private String notes;
+    private String sellerId;
+    private java.time.Instant expiresAt;
+    private String paymentId;
+    private String reviewPaymentId;
 
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
+    public String getReviewPaymentId() {
+        return reviewPaymentId;
+    }
 
-    public String getOrderNumber() { return orderNumber; }
-    public void setOrderNumber(String orderNumber) { this.orderNumber = orderNumber; }
+    public void setReviewPaymentId(String value) {
+        reviewPaymentId = value;
+    }
 
-    public List<OrderItem> getItems() { return items; }
-    public void setItems(List<OrderItem> items) { this.items = items; }
+    private String reservationStatus;
+    private Long version;
 
-    public BigDecimal getSubtotal() { return subtotal; }
-    public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
+    public String getSellerId() {
+        return sellerId;
+    }
 
-    public BigDecimal getShippingCost() { return shippingCost; }
-    public void setShippingCost(BigDecimal shippingCost) { this.shippingCost = shippingCost; }
+    public void setSellerId(String value) {
+        sellerId = value;
+    }
 
-    public String getShippingAddress() { return shippingAddress; }
-    public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
+    public java.time.Instant getExpiresAt() {
+        return expiresAt;
+    }
 
-    public String getPaymentMethod() { return paymentMethod; }
-    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+    public void setExpiresAt(java.time.Instant value) {
+        expiresAt = value;
+    }
 
-    public String getPaymentStatus() { return paymentStatus; }
-    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+    public String getPaymentId() {
+        return paymentId;
+    }
 
-    public String getOrderStatus() { return orderStatus; }
-    public void setOrderStatus(String orderStatus) { this.orderStatus = orderStatus; }
+    public void setPaymentId(String value) {
+        paymentId = value;
+    }
 
-    public LocalDateTime getOrderDate() { return orderDate; }
-    public void setOrderDate(LocalDateTime orderDate) { this.orderDate = orderDate; }
+    public String getReservationStatus() {
+        return reservationStatus;
+    }
 
-    public LocalDateTime getEstimatedDeliveryDate() { return estimatedDeliveryDate; }
-    public void setEstimatedDeliveryDate(LocalDateTime estimatedDeliveryDate) { this.estimatedDeliveryDate = estimatedDeliveryDate; }
+    public void setReservationStatus(String value) {
+        reservationStatus = value;
+    }
 
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
-    
+    public boolean requiresReservationTransition(String target) {
+        if (target.equals(reservationStatus))
+            return false;
+        if (!("HELD".equals(reservationStatus) && ("RELEASED".equals(target) || "CONSUMED".equals(target)))
+                && !("CONSUMED".equals(reservationStatus) && "RETURNED".equals(target)))
+            throw new IllegalStateException("Invalid inventory transition");
+        return true;
+    }
+
+    public void transitionReservation(String target) {
+        if (requiresReservationTransition(target))
+            reservationStatus = target;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long value) {
+        version = value;
+    }
+
+    public BigDecimal getTotal() {
+        return subtotal.add(shippingCost);
+    }
+
+    public boolean unpaid() {
+        return "UNPAID".equals(orderStatus);
+    }
+
+    public void cancel() {
+        if (!unpaid())
+            throw new IllegalStateException("Only unpaid orders can be cancelled");
+        orderStatus = "CANCELLED";
+    }
+
+    public boolean expire(java.time.Instant now) {
+        if (!unpaid() || expiresAt.isAfter(now))
+            return false;
+        orderStatus = "EXPIRED";
+        return true;
+    }
+
+    public boolean acceptPayment(String id, BigDecimal amount, String currency, java.time.Instant now) {
+        if (id == null || id.isBlank())
+            throw new IllegalArgumentException("Payment ID required");
+        if (id.equals(paymentId))
+            return false;
+        if (!"VND".equals(currency) || amount == null || amount.compareTo(getTotal()) != 0
+                || !unpaid() || !expiresAt.isAfter(now)) {
+            orderStatus = "PAYMENT_REVIEW";
+            paymentStatus = "REVIEW";
+            reviewPaymentId = id;
+            return false;
+        }
+        paymentId = id;
+        paymentStatus = "PAID";
+        orderStatus = "PAID";
+        return true;
+    }
+
+    public boolean acceptRefund(String id, BigDecimal amount, String currency) {
+        if (!"VND".equals(currency) || amount == null || amount.compareTo(getTotal()) != 0)
+            throw new IllegalStateException("Refund amount or currency mismatch");
+        if (!id.equals(paymentId) || "REFUNDED".equals(paymentStatus))
+            return false;
+        paymentStatus = "REFUNDED";
+        orderStatus = "REFUNDED";
+        return true;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getOrderNumber() {
+        return orderNumber;
+    }
+
+    public void setOrderNumber(String orderNumber) {
+        this.orderNumber = orderNumber;
+    }
+
+    public List<OrderItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<OrderItem> items) {
+        this.items = items;
+    }
+
+    public BigDecimal getSubtotal() {
+        return subtotal;
+    }
+
+    public void setSubtotal(BigDecimal subtotal) {
+        this.subtotal = subtotal;
+    }
+
+    public BigDecimal getShippingCost() {
+        return shippingCost;
+    }
+
+    public void setShippingCost(BigDecimal shippingCost) {
+        this.shippingCost = shippingCost;
+    }
+
+    public String getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getOrderStatus() {
+        return orderStatus;
+    }
+
+    public void setOrderStatus(String orderStatus) {
+        this.orderStatus = orderStatus;
+    }
+
+    public LocalDateTime getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(LocalDateTime orderDate) {
+        this.orderDate = orderDate;
+    }
+
+    public LocalDateTime getEstimatedDeliveryDate() {
+        return estimatedDeliveryDate;
+    }
+
+    public void setEstimatedDeliveryDate(LocalDateTime estimatedDeliveryDate) {
+        this.estimatedDeliveryDate = estimatedDeliveryDate;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
 }

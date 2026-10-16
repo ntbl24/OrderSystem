@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class Shipment extends BaseEntity {
+    private Long version;
     private String orderId;
     private String userId;
     private String trackingNumber;

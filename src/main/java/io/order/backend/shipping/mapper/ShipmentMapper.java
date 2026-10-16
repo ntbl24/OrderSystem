@@ -14,8 +14,7 @@ public interface ShipmentMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     Shipment toEntity(ShipmentDTO shipmentDTO);
-    
+
     ShipmentDTO toDTO(Shipment shipment);
 
-    
 }

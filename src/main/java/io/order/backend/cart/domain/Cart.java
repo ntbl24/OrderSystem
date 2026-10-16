@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class Cart extends BaseEntity {
     private String userId;
+    private Long version;
     private List<CartItem> items = new ArrayList<>();
     private BigDecimal subTotal = BigDecimal.ZERO;
     private BigDecimal shippingCost = BigDecimal.ZERO;

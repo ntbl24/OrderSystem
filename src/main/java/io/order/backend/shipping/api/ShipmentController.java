@@ -1,9 +1,6 @@
 package io.order.backend.shipping.api;
 
-import java.util.List;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.order.backend.common.response.ApiResponse;
-import io.order.backend.shipping.application.ShipmentService;
+import io.order.backend.shipping.application.port.in.ShipmentUseCase;
 import io.order.backend.shipping.dto.ShipmentDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/shipments")
 @RequiredArgsConstructor
 public class ShipmentController {
-    private final ShipmentService shipmentService;
+    private final ShipmentUseCase shipmentService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ShipmentDTO>> createShipment(@Valid @RequestBody ShipmentDTO shipmentDTO) {

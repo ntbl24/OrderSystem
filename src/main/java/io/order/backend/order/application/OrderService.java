@@ -1,83 +1,54 @@
 package io.order.backend.order.application;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import io.order.backend.common.application.port.CurrentBuyerPort;
 import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.order.application.port.out.InventoryPort;
+import io.order.backend.order.application.port.in.OrderUseCase;
 import io.order.backend.order.domain.Order;
 import io.order.backend.order.dto.OrderDTO;
-import io.order.backend.order.infrastructure.OrderRepository;
+import io.order.backend.order.application.port.out.OrderRepository;
 import io.order.backend.order.mapper.OrderMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.*;
 
-@Service 
-@RequiredArgsConstructor 
-public class OrderService {
-    private final OrderRepository orderRepository;
-    private final OrderMapper orderMapper;
-    
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class OrderService implements OrderUseCase {
+    private final OrderRepository orders;
+    private final OrderMapper mapper;
+    private final CurrentBuyerPort buyer;
+    private final InventoryPort inventory;
 
-    @Transactional 
-    public OrderDTO createOrder(OrderDTO orderDTO) {
-        Order order = orderMapper.toEntity(orderDTO);
-        order.setOrderNumber(generateOrderNumber());
-        order.setOrderDate(LocalDateTime.now());
-        order.setOrderStatus("PENDING");
-        order.setPaymentStatus("PENDING");
-        OrderDTO savedOrderDTO = orderMapper.toDto(orderRepository.save(order));
-        return savedOrderDTO;
+    private Order owned(Order order) {
+        if (!buyer.buyerId().equals(order.getUserId()))
+            throw new ResourceNotFoundException("Order not found");
+        return order;
     }
 
-    public OrderDTO getOrderById(String id){
-        return orderRepository.findById(id)
-            .map(orderMapper::toDto)
-            .orElseThrow(() -> new ResourceNotFoundException("Order not found with ID: " + id));
+    public OrderDTO getOrderById(String id) {
+        return mapper
+                .toDto(owned(orders.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"))));
     }
 
-    public OrderDTO getOrderByOrderNumber(String orderNumber){
-        return orderRepository.findByOrderNumber(orderNumber)
-            .map(orderMapper::toDto)
-            .orElseThrow(() -> new ResourceNotFoundException("Order not found with order number: " + orderNumber));
+    public OrderDTO getOrderByOrderNumber(String number) {
+        return mapper.toDto(owned(
+                orders.findByOrderNumber(number).orElseThrow(() -> new ResourceNotFoundException("Order not found"))));
     }
 
-    public List<OrderDTO> getOrdersByUserId(String userId){
-        return orderMapper.toOrderDTOList(orderRepository.findByUserId(userId));
-    }
-
-    public List<OrderDTO> getOrdersByStatus(String status){
-        return orderMapper.toOrderDTOList(orderRepository.findByOrderStatus(status));
+    public List<OrderDTO> getOrdersByUserId(String userId) {
+        if (!buyer.buyerId().equals(userId))
+            throw new ResourceNotFoundException("Orders not found");
+        return mapper.toOrderDTOList(orders.findByUserId(userId));
     }
 
     @Transactional
-    public OrderDTO updateOrderStatus(String id, String orderStatus) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
-        order.setOrderStatus(orderStatus);
-        return orderMapper.toDto(orderRepository.save(order));
-    }
-
-    @Transactional
-    public OrderDTO updateOrder(String id, OrderDTO orderDTO) {
-        orderRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
-        Order updatedOrder = orderMapper.toEntity(orderDTO);
-        updatedOrder.setId(id);
-        return orderMapper.toDto(orderRepository.save(updatedOrder));
-    }
-
-    @Transactional
-    public void deleteOrder(String id) {
-        if (!orderRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Order not found with id: " + id);
-        }
-        orderRepository.deleteById(id);
-    }
-
-    private String generateOrderNumber() {
-        return "ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    public OrderDTO cancel(String id) {
+        Order order = owned(orders.lockById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found")));
+        order.cancel();
+        InventorySettlement.settle(order, inventory, "RELEASED");
+        return mapper.toDto(orders.save(order));
     }
 }
