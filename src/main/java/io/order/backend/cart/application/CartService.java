@@ -35,7 +35,8 @@ public class CartService implements CartUseCase {
     }
 
     private Cart byId(String id) {
-        return owned(carts.findById(id).orElseThrow(() -> new ResourceNotFoundException("Cart not found")));
+        return owned(carts.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Cart not found")));
     }
 
     private Cart byUser(String id) {

@@ -5,9 +5,7 @@ import io.order.backend.common.domain.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;   
 
-@Data
-@EqualsAndHashCode(callSuper = true)  
-public class User extends BaseEntity {
+public class User {
     private String email;
     private String firstName;
     private String lastName;
