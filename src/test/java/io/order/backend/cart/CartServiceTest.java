@@ -1,6 +1,5 @@
 package io.order.backend.cart;
 
-import io.order.backend.cart.application.CartService;
 import io.order.backend.cart.application.port.out.CartRepository;
 import io.order.backend.cart.application.port.out.ProductCatalogPort;
 import io.order.backend.cart.domain.Cart;
@@ -17,6 +16,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import cart.application.usecase.CartService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

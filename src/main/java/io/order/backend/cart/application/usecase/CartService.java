@@ -1,4 +1,4 @@
-package io.order.backend.cart.application;
+package io.order.backend.cart.application.usecase;
 
 import io.order.backend.cart.application.port.in.CartUseCase;
 

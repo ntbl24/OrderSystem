@@ -1,10 +1,14 @@
-package io.order.backend.cart.infrastructure;
+package cart.infrastructure.persistence;
 
 import io.order.backend.cart.application.port.out.CartRepository;
 
 import io.order.backend.cart.domain.*;
 import io.order.backend.cart.infrastructure.persistence.*;
+import io.order.backend.cart.mapper.CartMapper;
+
 import java.util.*;
+
+import io.order.backend.user.domain.UserId;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,9 +18,12 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class JpaCartAdapter implements CartRepository {
     private final CartJpaRepository repository;
+    private final CartMapper cartMapper;
 
-    public Optional<Cart> findById(String id) {
-        return repository.findById(id).filter(e -> !e.deleted).map(CartPersistenceMapper::domain);
+    @Override 
+    public Optional<Cart> findById(CartId id) {
+        return repository.findById(id.value())
+            .map(cartMapper::toDomain);
     }
 
     public boolean existsById(String id) {
@@ -40,8 +47,8 @@ public class JpaCartAdapter implements CartRepository {
         return CartPersistenceMapper.domain(repository.saveAndFlush(e));
     }
 
-    public Optional<Cart> findByUserId(String userId) {
-        return repository.findByUserId(userId).filter(e -> !e.deleted).map(CartPersistenceMapper::domain);
+    public Optional<Cart> findByUserId(UserId userId) {
+        return repository.findByUserId(userId.value()).map(cartMapper::toDomain);
     }
 
     public void deleteByUserId(String userId) {

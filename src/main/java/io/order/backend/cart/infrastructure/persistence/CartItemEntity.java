@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Embeddable
-public class CartLine {
+public class CartItemEntity {
     public String productId;
     public String productName;
     public int quantity;

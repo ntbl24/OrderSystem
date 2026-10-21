@@ -41,4 +41,40 @@ public class Product {
         if (quantity < 1) throw new IllegalArgumentException("Invalid quantity");
         stock = Math.addExact(stock, quantity);
     }
+
+    public ProductId getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public String getSku() {
+        return sku;
+    }
+
+    public String getSellerId() {
+        return sellerId;
+    }
+
+    public int getReserved() {
+        return reserved;
+    }
 }

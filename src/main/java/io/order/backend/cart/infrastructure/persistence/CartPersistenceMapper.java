@@ -38,7 +38,7 @@ public final class CartPersistenceMapper {
         e.userId = d.getUserId();
         e.version = d.getVersion();
         e.items = d.getItems().stream().map(i -> {
-            CartLine x = new CartLine();
+            CartItemEntity x = new CartItemEntity();
             x.productId = i.getProductId();
             x.productName = i.getProductName();
             x.quantity = i.getQuantity();
