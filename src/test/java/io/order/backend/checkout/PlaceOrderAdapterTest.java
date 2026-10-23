@@ -3,7 +3,7 @@ package io.order.backend.checkout;
 import io.order.backend.checkout.application.port.out.PlaceOrderPort;
 import io.order.backend.checkout.infrastructure.local.PlaceOrderAdapter;
 import io.order.backend.order.application.port.in.PlaceOrderUseCase;
-import io.order.backend.order.dto.OrderDTO;
+import io.order.backend.order.application.port.in.OrderResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,7 +23,7 @@ class PlaceOrderAdapterTest {
 
     @Test
     void place_snapshot_mapsToOrderOwnedCommand() {
-        var expected = new OrderDTO();
+        var expected = new OrderResult();
         when(orders.placeOrder(any())).thenReturn(expected);
         var line = new PlaceOrderPort.Line("p", "Product", "sku", 2, BigDecimal.TEN, new BigDecimal("20"));
 

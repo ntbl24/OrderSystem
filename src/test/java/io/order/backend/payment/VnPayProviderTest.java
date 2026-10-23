@@ -1,5 +1,5 @@
 package io.order.backend.payment;
-import io.order.backend.payment.config.VNPayConfig;
+import io.order.backend.payment.infrastructure.config.VNPayConfig;
 import io.order.backend.payment.infrastructure.provider.VnPayProvider;
 import okhttp3.OkHttpClient;
 import tools.jackson.databind.json.JsonMapper;

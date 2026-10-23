@@ -1,56 +1,36 @@
 package io.order.backend.cart.infrastructure.persistence;
 
-import io.order.backend.cart.domain.*;
-import java.util.*;
+import io.order.backend.cart.domain.Cart;
+import io.order.backend.cart.domain.CartId;
+import io.order.backend.user.domain.UserId;
 
 public final class CartPersistenceMapper {
-    public static Cart domain(CartEntity e) {
-        Cart d = new Cart();
-        d.setId(e.id);
-        d.setCreatedAt(e.createdAt);
-        d.setUpdatedAt(e.updatedAt);
-        d.setDeleted(e.deleted);
-        d.setUserId(e.userId);
-        d.setVersion(e.version);
-        d.setItems(e.items.stream().map(i -> {
-            CartItem x = new CartItem();
-            x.setProductId(i.productId);
-            x.setProductName(i.productName);
-            x.setQuantity(i.quantity);
-            x.setUnitPrice(i.unitPrice);
-            x.setSubTotal(i.subTotal);
-            return x;
-        }).collect(java.util.stream.Collectors.toCollection(ArrayList::new)));
-        d.setSubTotal(e.subTotal);
-        d.setShippingCost(e.shippingCost);
-        d.setTotal(e.total);
-        d.setTax(e.tax);
-        d.setCouponCode(e.couponCode);
-        d.setDiscount(e.discount);
-        return d;
+    private CartPersistenceMapper() {}
+
+    public static Cart domain(CartEntity entity) {
+        return Cart.restore(new CartId(entity.id), new UserId(entity.userId), entity.version,
+                entity.items.stream().map(CartItemMapper::toDomain).toList(),
+                entity.shippingCost, entity.tax, entity.couponCode, entity.discount);
     }
 
-    public static void copy(Cart d, CartEntity e) {
-        e.id = d.getId();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
-        e.deleted = d.isDeleted();
-        e.userId = d.getUserId();
-        e.version = d.getVersion();
-        e.items = d.getItems().stream().map(i -> {
-            CartItemEntity x = new CartItemEntity();
-            x.productId = i.getProductId();
-            x.productName = i.getProductName();
-            x.quantity = i.getQuantity();
-            x.unitPrice = i.getUnitPrice();
-            x.subTotal = i.getSubTotal();
-            return x;
-        }).collect(java.util.stream.Collectors.toCollection(ArrayList::new));
-        e.subTotal = d.getSubTotal();
-        e.shippingCost = d.getShippingCost();
-        e.total = d.getTotal();
-        e.tax = d.getTax();
-        e.couponCode = d.getCouponCode();
-        e.discount = d.getDiscount();
+    public static void copy(Cart cart, CartEntity entity) {
+        entity.id = cart.getId().value();
+        entity.userId = cart.getUserId().value();
+        entity.items.clear();
+        entity.items.addAll(cart.getItems().stream().map(i -> {
+            CartItemEntity item = new CartItemEntity();
+            item.productId = i.getProductId().value();
+            item.productName = i.getProductName();
+            item.quantity = i.getQuantity();
+            item.unitPrice = i.getUnitPrice();
+            item.subTotal = i.getSubTotal();
+            return item;
+        }).toList());
+        entity.subTotal = cart.getSubTotal();
+        entity.shippingCost = cart.getShippingCost();
+        entity.total = cart.getTotal();
+        entity.tax = cart.getTax();
+        entity.couponCode = cart.getCouponCode();
+        entity.discount = cart.getDiscount();
     }
 }

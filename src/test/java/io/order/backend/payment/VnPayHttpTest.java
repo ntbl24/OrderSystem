@@ -1,7 +1,7 @@
 package io.order.backend.payment;
 import com.sun.net.httpserver.HttpServer;
-import io.order.backend.payment.application.port.PaymentGateway;
-import io.order.backend.payment.config.VNPayConfig;
+import io.order.backend.payment.application.port.out.PaymentGateway;
+import io.order.backend.payment.infrastructure.config.VNPayConfig;
 import io.order.backend.payment.domain.Payment;
 import io.order.backend.payment.infrastructure.provider.VnPayProvider;
 import okhttp3.OkHttpClient;

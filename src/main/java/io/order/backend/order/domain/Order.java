@@ -24,6 +24,27 @@ public class Order extends BaseEntity {
     private String paymentId;
     private String reviewPaymentId;
 
+    public static Order place(String ownerId, String sellerId, List<OrderItem> items,
+            BigDecimal subtotal, String shippingAddress, String notes, java.time.Instant now,
+            LocalDateTime orderDate) {
+        var order = new Order();
+        order.setId(java.util.UUID.randomUUID().toString());
+        order.orderNumber = "ORD-" + order.getId();
+        order.userId = ownerId;
+        order.sellerId = sellerId;
+        order.items = List.copyOf(items);
+        order.subtotal = subtotal;
+        order.shippingCost = BigDecimal.valueOf(30000);
+        order.shippingAddress = shippingAddress;
+        order.notes = notes;
+        order.paymentMethod = "VNPAY";
+        order.paymentStatus = "UNPAID";
+        order.orderStatus = "UNPAID";
+        order.reservationStatus = "HELD";
+        order.orderDate = orderDate;
+        order.expiresAt = now.plusSeconds(900);
+        return order;
+    }
     public String getReviewPaymentId() {
         return reviewPaymentId;
     }

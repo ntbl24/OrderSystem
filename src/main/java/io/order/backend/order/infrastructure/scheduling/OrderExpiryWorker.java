@@ -1,6 +1,6 @@
 package io.order.backend.order.infrastructure.scheduling;
 
-import io.order.backend.order.application.OrderExpiryService;
+import io.order.backend.order.application.port.in.ExpireOrderUseCase;
 
 import io.order.backend.order.application.port.out.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import java.time.Instant;
 @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.workers.enabled", havingValue = "true", matchIfMissing = true)
 public class OrderExpiryWorker {
     private final OrderRepository orders;
-    private final OrderExpiryService expiry;
+    private final ExpireOrderUseCase expiry;
 
     @Scheduled(fixedDelayString = "${purchase.expiry-delay-ms:30000}")
     public void expire() {

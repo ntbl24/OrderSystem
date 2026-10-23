@@ -1,12 +1,12 @@
 package io.order.backend.checkout;
 
-import io.order.backend.checkout.application.CheckoutService;
+import io.order.backend.checkout.application.usecase.CheckoutService;
 import io.order.backend.checkout.application.port.out.InventoryPort;
 import io.order.backend.checkout.application.port.out.PlaceOrderPort;
-import io.order.backend.checkout.dto.CheckoutRequest;
+import io.order.backend.checkout.application.port.in.CheckoutCommand;
 import io.order.backend.common.application.port.CurrentBuyerPort;
 import io.order.backend.common.application.port.IdempotencyPort;
-import io.order.backend.order.dto.OrderDTO;
+import io.order.backend.order.application.port.in.OrderResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,16 +33,16 @@ class CheckoutServiceTest {
     @BeforeEach
     void executeAction() {
         when(buyer.buyerId()).thenReturn("buyer");
-        when(idempotency.execute(eq("buyer"), eq("CHECKOUT"), eq("key"), any(), eq(OrderDTO.class), any()))
+        when(idempotency.execute(eq("buyer"), eq("CHECKOUT"), eq("key"), any(), eq(OrderResult.class), any()))
                 .thenAnswer(call -> ((Supplier<?>) call.getArgument(5)).get());
     }
 
     @Test
     void checkout_duplicateItems_aggregatesReservationAndUsesSnapshotPrice() {
-        var request = new CheckoutRequest(List.of(new CheckoutRequest.Item("p", 1), new CheckoutRequest.Item("p", 2)), "address", "notes");
+        var request = new CheckoutCommand(List.of(new CheckoutCommand.Item("p", 1), new CheckoutCommand.Item("p", 2)), "address", "notes");
         when(inventory.reserve(Map.of("p", 3))).thenReturn(Map.of("p",
                 new InventoryPort.ProductSnapshot("p", "seller", "Product", "sku", new BigDecimal("100000"))));
-        var expected = new OrderDTO();
+        var expected = new OrderResult();
         when(orders.place(any())).thenReturn(expected);
 
         assertThat(checkout.checkout("key", request)).isSameAs(expected);
@@ -59,7 +59,7 @@ class CheckoutServiceTest {
 
     @Test
     void checkout_mixedSellers_doesNotPlaceOrder() {
-        var request = new CheckoutRequest(List.of(new CheckoutRequest.Item("a", 1), new CheckoutRequest.Item("b", 1)), "address", null);
+        var request = new CheckoutCommand(List.of(new CheckoutCommand.Item("a", 1), new CheckoutCommand.Item("b", 1)), "address", null);
         when(inventory.reserve(any())).thenReturn(Map.of(
                 "a", new InventoryPort.ProductSnapshot("a", "one", "A", "a", BigDecimal.TEN),
                 "b", new InventoryPort.ProductSnapshot("b", "two", "B", "b", BigDecimal.TEN)));

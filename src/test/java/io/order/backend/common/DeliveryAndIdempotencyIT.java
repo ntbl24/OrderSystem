@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import io.order.backend.common.exception.ConflictException;
-import io.order.backend.common.idempotency.IdempotencyService;
-import io.order.backend.common.messaging.OutboxDispatcher;
-import io.order.backend.common.messaging.OutboxHandler;
-import io.order.backend.common.messaging.OutboxService;
+import io.order.backend.common.infrastructure.idempotency.IdempotencyService;
+import io.order.backend.common.infrastructure.messaging.OutboxDispatcher;
+import io.order.backend.common.application.port.OutboxHandler;
+import io.order.backend.common.infrastructure.messaging.OutboxService;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,6 +85,21 @@ class DeliveryAndIdempotencyIT {
         })).isInstanceOf(IllegalStateException.class);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM idempotency_records", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM test_effects", Integer.class)).isZero();
+    }
+
+    @Test
+    void enqueue_rolledBackBusinessTransaction_shouldNotPublishEvent() {
+        assertThatThrownBy(() -> new TransactionTemplate(manager).executeWithoutResult(status -> {
+            jdbc.update("INSERT INTO test_effects(id) VALUES ('rolled-back-order')");
+            outbox.enqueue("TEST", "rolled-back-order", "payload");
+            throw new IllegalStateException("Business mutation failed");
+        })).isInstanceOf(IllegalStateException.class);
+
+        dispatcher.dispatch();
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM test_effects", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_events", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM inbox_events", Integer.class)).isZero();
     }
 
     @Test

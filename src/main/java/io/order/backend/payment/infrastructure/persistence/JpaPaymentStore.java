@@ -1,6 +1,6 @@
 package io.order.backend.payment.infrastructure.persistence;
 
-import io.order.backend.payment.application.port.PaymentStore;
+import io.order.backend.payment.application.port.out.PaymentStore;
 import io.order.backend.payment.domain.Payment;
 import jakarta.persistence.*;
 import org.springframework.stereotype.Repository;

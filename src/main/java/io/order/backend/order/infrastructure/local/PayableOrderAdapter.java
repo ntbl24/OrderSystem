@@ -1,6 +1,6 @@
 package io.order.backend.order.infrastructure.local;
 
-import io.order.backend.payment.application.port.PayableOrderPort;
+import io.order.backend.payment.application.port.out.PayableOrderPort;
 import io.order.backend.order.application.port.in.PayableOrderUseCase;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.*;

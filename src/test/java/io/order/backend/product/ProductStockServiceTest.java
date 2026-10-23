@@ -1,7 +1,7 @@
 package io.order.backend.product;
 
 import io.order.backend.common.exception.ResourceNotFoundException;
-import io.order.backend.product.application.ProductStockService;
+import io.order.backend.product.application.usecase.ProductStockService;
 import io.order.backend.product.application.port.in.ProductStockUseCase.Line;
 import io.order.backend.product.application.port.out.ProductRepository;
 import io.order.backend.product.domain.Product;
@@ -110,7 +110,7 @@ class ProductStockServiceTest {
 
     private Product product(String id) {
         Product product = new Product();
-        product.setId(id);
+        product.setId(java.util.UUID.nameUUIDFromBytes(id.getBytes()).toString());
         product.setSellerId("seller");
         product.setTitle("Product " + id);
         product.setSku("SKU-" + id);

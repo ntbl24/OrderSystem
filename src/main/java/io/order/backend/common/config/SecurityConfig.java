@@ -1,6 +1,8 @@
 package io.order.backend.common.config;
 
+import io.order.backend.common.response.ApiResponse;
 import java.util.ArrayList;
+import tools.jackson.databind.json.JsonMapper;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,14 +14,26 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 
 @Configuration(proxyBeanMethods = false)
 @EnableMethodSecurity
 @EnableWebSecurity
 public class SecurityConfig {
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JsonMapper json) throws Exception {
+        AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
+            response.setStatus(401);
+            response.setContentType("application/json");
+            json.writeValue(response.getOutputStream(), ApiResponse.error("Authentication required"));
+        };
+        AccessDeniedHandler forbidden = (request, response, exception) -> {
+            response.setStatus(403);
+            response.setContentType("application/json");
+            json.writeValue(response.getOutputStream(), ApiResponse.error("Access denied"));
+        };
         var scopes = new JwtGrantedAuthoritiesConverter();
         var converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
@@ -41,7 +55,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/products", "/api/v1/products/**", "/api/v1/shipments", "/api/v1/shipments/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/v1/payments/*/refund", "/api/v1/payments/*/refunds").hasRole("ADMIN")
                 .anyRequest().authenticated())
-            .oauth2ResourceServer(resource -> resource.jwt(jwt -> jwt.jwtAuthenticationConverter(converter)))
+            .exceptionHandling(errors -> errors.authenticationEntryPoint(unauthorized).accessDeniedHandler(forbidden))
+            .oauth2ResourceServer(resource -> resource
+                .authenticationEntryPoint(unauthorized)
+                .accessDeniedHandler(forbidden)
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)))
             .build();
     }
 }

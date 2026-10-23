@@ -12,9 +12,20 @@ Modular monolith theo business module: `product`, `cart`, `inventory`, `checkout
 - `application.port.out`: repository và dependency do module tiêu thụ định nghĩa; implementation nằm trong `infrastructure`. Spring Data/JPA không đi vào application/domain; pagination Spring Data hiện chỉ được dùng ở application contract, không ở domain.
 - Module không truy cập domain, repository hoặc mapper của module khác. Local adapter chuyển đổi snapshot/command bất biến giữa các public input port. Checkout điều phối reservation qua inventory và tạo đơn qua order; product sở hữu thao tác stock, order sở hữu vòng đời reservation.
 - Payment application nhận notification có kiểu và trả kết quả trung lập; adapter VNPay xử lý chữ ký, trường giao thức và acknowledgment. Idempotency/outbox được gọi qua shared ports, implementation JDBC vẫn dùng database local.
-- DTO API hiện hữu được giữ để tương thích; chưa coi là contract HTTP/message phân tán độc lập. Khi tách microservice cần version hóa contract, thay local adapter và thiết kế saga/compensation thay vì chỉ đổi transport.
+- Các module dùng cấu trúc của cart: `application/port/in`, `application/port/out`, `application/usecase`, `domain`, `infrastructure/persistence`, `infrastructure/web/controller` và `infrastructure/web/dto`. Request chuyển thành command; response chuyển từ domain/application result tại web adapter. Application không phụ thuộc DTO hay mapper HTTP.
+- Giữ tương thích route, JSON, status, ID và schema hiện có; việc di chuyển class/package không phải migration API hay database. Khi tách microservice cần version hóa contract, thay local adapter và thiết kế saga/compensation thay vì chỉ đổi transport.
+- Idempotency JDBC và outbox dispatcher nằm trong `common/infrastructure`; public ports và hợp đồng consumer nằm trong `common/application/port`. Inventory là use case điều phối stock qua port, không tạo thêm aggregate khi chưa có invariant riêng.
 
-ArchUnit kiểm tra domain độc lập framework, application không phụ thuộc adapter/JDBC, controller không gọi implementation và module không vượt qua ranh giới nội bộ của nhau.
+Kiểm thử tập trung chức năng, domain invariants và các luồng nghiệp vụ; không bổ sung test kiến trúc. Cart chủ động dùng chung value object `ProductId` với public catalog port; ngoại lệ này chỉ áp dụng cho ID, không cho aggregate/repository của product.
+
+### Module cart
+
+- `infrastructure/web/controller` chỉ xử lý HTTP và gọi input ports. Request/response nằm trong `infrastructure/web/dto`: `toCommand()` chuyển ID chuỗi thành value object; `CartResponse.from()` chuyển domain thành JSON, giữ các trường response cũ.
+- `application/port/in` định nghĩa create/update/query/delete; command chỉ mang ID và số lượng item, không mang giá do client quyết định. `application/usecase` điều phối ownership, catalog và repository trong transaction; query dùng transaction read-only.
+- `domain` là Java thuần: aggregate quản lý items, giới hạn 100 sản phẩm, số lượng 1–100.000 và tính lại tổng sau mỗi thay đổi. Items bất biến, collection trả ra chỉ đọc. Phí ship cart bằng 0; phí checkout không thay đổi.
+- `application/port/out` khai báo nhu cầu lưu trữ/catalog. Local catalog adapter chuyển public snapshot của product; persistence mapper riêng chuyển domain ↔ JPA, giữ schema varchar IDs, `line_index` và optimistic version, không cần migration.
+- Giữ nguyên các route `/api/v1/cart` và status HTTP. POST create trả 201; các thao tác còn lại giữ 200. POST item cộng số lượng; PUT cart **gộp** items (ghi đè số lượng sản phẩm được gửi, giữ sản phẩm không gửi), không thay toàn bộ giỏ. PUT quantity bằng 0 xóa sản phẩm; clear xóa giỏ để có thể tạo lại.
+- Create/add/update đều dùng tên và giá hiện tại từ catalog server. Khi sửa giỏ, tất cả items còn lại được cập nhật giá. Body item chỉ cần `productId`, `quantity`; `productName`/`unitPrice` cũ vẫn được nhận nhưng bị bỏ qua. PUT cart chỉ cần `items`; ownership dựa vào buyer đăng nhập và chủ giỏ đã lưu. User/product IDs tuân theo UUID value objects hiện có.
 
 ## Cấu hình và chạy
 
@@ -43,7 +54,7 @@ mvn spring-boot:run
 
 Flyway tạo schema mới; Hibernate chỉ validate, không tự sửa schema. **Không chuyển dữ liệu MongoDB cũ**. Backup dữ liệu cũ và xây dựng migration riêng nếu cần. Không đặt credential trong source hay thư mục static.
 
-JWT được kiểm tra chữ ký, issuer, audience và thời hạn. Buyer lấy từ claim `sub`, không từ request body. Claim `roles` là array chứa `ADMIN`/`BUYER`; quản lý sản phẩm, shipment và hoàn tiền cần `ADMIN`. Không có API phát hành token/password login trong ứng dụng này.
+JWT được kiểm tra chữ ký, issuer, audience và thời hạn bằng OAuth2 Resource Server hiện có; không thay bằng bộ lọc JWT tự viết. Buyer lấy từ claim `sub`, không từ request body. Claim `roles` là array chứa `ADMIN`/`BUYER`; quản lý sản phẩm, shipment và hoàn tiền cần `ADMIN`. Lỗi 401/403 trong security filter dùng cùng JSON `ApiResponse` với controller advice; bearer token không hợp lệ vẫn bị từ chối trên route public. Không có API phát hành token/password login trong ứng dụng này.
 
 ## Quy tắc mua và thanh toán
 

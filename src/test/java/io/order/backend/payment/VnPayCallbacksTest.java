@@ -1,7 +1,7 @@
 package io.order.backend.payment;
 
-import io.order.backend.payment.application.port.PaymentNotification;
-import io.order.backend.payment.application.port.PaymentUseCase;
+import io.order.backend.payment.application.port.in.PaymentNotification;
+import io.order.backend.payment.application.port.in.PaymentUseCase;
 import io.order.backend.payment.infrastructure.provider.VnPayCallbacks;
 import io.order.backend.payment.infrastructure.provider.VnPayProvider;
 import org.junit.jupiter.api.BeforeEach;

@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.mockito.Mockito.when;
+import org.springframework.security.oauth2.jwt.BadJwtException;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 @WebMvcTest(controllers = SecurityConfigTest.TestController.class, properties = {
     "spring.security.oauth2.resourceserver.jwt.issuer-uri=https://issuer.test",
@@ -54,6 +58,40 @@ class SecurityConfigTest {
     @Test
     void providerIpn_anonymous_shouldReachProviderValidation() throws Exception {
         mvc.perform(get("/api/v1/payments/vnpay/ipn")).andExpect(status().isOk());
+    }
+
+    @Test
+    void checkout_anonymous_shouldReturnLegacyJsonError() throws Exception {
+        mvc.perform(post("/api/v1/checkout"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.message").value("Authentication required"));
+    }
+
+    @Test
+    void productRead_invalidBearer_shouldRejectEvenOnPublicRoute() throws Exception {
+        when(decoder.decode("invalid")).thenThrow(new BadJwtException("Invalid token"));
+        mvc.perform(get("/api/v1/products").header("Authorization", "Bearer invalid"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void productWrite_decodedAdminRole_shouldAllowAccess() throws Exception {
+        when(decoder.decode("admin-token")).thenReturn(Jwt.withTokenValue("admin-token")
+            .header("alg", "RS256").subject("admin").claim("roles", java.util.List.of("ADMIN")).build());
+        mvc.perform(post("/api/v1/products").header("Authorization", "Bearer admin-token"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void productWrite_unknownRole_shouldReturnForbiddenJsonError() throws Exception {
+        when(decoder.decode("unknown-role")).thenReturn(Jwt.withTokenValue("unknown-role")
+            .header("alg", "RS256").subject("buyer").claim("roles", java.util.List.of("SUPERUSER")).build());
+        mvc.perform(post("/api/v1/products").header("Authorization", "Bearer unknown-role"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.message").value("Access denied"));
     }
 
     @RestController

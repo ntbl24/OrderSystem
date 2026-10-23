@@ -22,7 +22,7 @@ public final class ProductPersistenceMapper {
     }
 
     public static void copy(Product d, ProductEntity e) {
-        e.id = d.getId();
+        e.id = d.getId().value().toString();
         e.createdAt = d.getCreatedAt();
         e.updatedAt = d.getUpdatedAt();
         e.deleted = d.isDeleted();

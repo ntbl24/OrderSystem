@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CreateCartService implements CreateCartUseCase {
     private final CartAccessService accessService;
     private final CartRepository cartRepository;
+    private final CartPricingService pricing;
 
     @Override
     @Transactional
@@ -21,8 +22,10 @@ public class CreateCartService implements CreateCartUseCase {
         if (cartRepository.findByUserId(command.userId()).isPresent())
             throw new IllegalStateException("Cart already exists");
         Cart cart = Cart.create(command.userId());
-        command.items().forEach(item ->
-                cart.addItem(item.productId(), item.productName(), item.quantity(), item.unitPrice()));
+        command.items().forEach(item -> {
+            var product = pricing.product(item.productId());
+            cart.addItem(item.productId(), product.title(), item.quantity(), product.price());
+        });
         return cartRepository.save(cart);
     }
 }

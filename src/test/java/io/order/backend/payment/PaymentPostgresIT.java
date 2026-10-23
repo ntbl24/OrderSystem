@@ -1,10 +1,11 @@
 package io.order.backend.payment;
 
 import io.order.backend.common.application.port.CurrentBuyerPort;
-import io.order.backend.common.idempotency.IdempotencyService;
-import io.order.backend.common.messaging.OutboxService;
-import io.order.backend.payment.application.PaymentService;
-import io.order.backend.payment.application.port.*;
+import io.order.backend.common.application.port.IdempotencyPort;
+import io.order.backend.common.application.port.OutboxPort;
+import io.order.backend.payment.application.usecase.PaymentService;
+import io.order.backend.payment.application.port.in.*;
+import io.order.backend.payment.application.port.out.*;
 import io.order.backend.payment.domain.Payment;
 import io.order.backend.payment.infrastructure.persistence.JpaPaymentStore;
 import jakarta.persistence.EntityManager;
@@ -51,8 +52,8 @@ class PaymentPostgresIT {
         }; }
     }
     @MockitoBean org.springframework.security.oauth2.jwt.JwtDecoder jwtDecoder;
-    @MockitoBean CurrentBuyerPort buyer; @MockitoBean IdempotencyService keys;
-    @MockitoBean OutboxService outbox; @MockitoBean PaymentGateway gateway;
+    @MockitoBean CurrentBuyerPort buyer; @MockitoBean IdempotencyPort keys;
+    @MockitoBean OutboxPort outbox; @MockitoBean PaymentGateway gateway;
     @Autowired PaymentStore store; @Autowired PaymentService payments; @Autowired PlatformTransactionManager manager;
     @Test void persistence_assignedIdAndConcurrentIpn_singleSettlementEvent() throws Exception {
         var p=PaymentDomainTest.pending(BigDecimal.TEN); var tx=new TransactionTemplate(manager);

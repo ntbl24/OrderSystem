@@ -1,9 +1,9 @@
 package io.order.backend.payment;
 import io.order.backend.common.application.port.CurrentBuyerPort;
-import io.order.backend.common.idempotency.IdempotencyService;
-import io.order.backend.common.messaging.OutboxService;
-import io.order.backend.payment.application.*;
-import io.order.backend.payment.application.port.*;
+import io.order.backend.common.application.port.IdempotencyPort;
+import io.order.backend.common.application.port.OutboxPort;
+import io.order.backend.payment.application.usecase.*;
+import io.order.backend.payment.application.port.out.*;
 import io.order.backend.payment.domain.Payment;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 class PaymentWorkerTest {
     @Mock PaymentStore store; @Mock PayableOrderPort orders; @Mock PaymentGateway gateway;
     @Mock PlatformTransactionManager manager; @Mock TransactionStatus txStatus;
-    @Mock CurrentBuyerPort buyer; @Mock IdempotencyService keys; @Mock OutboxService outbox;
+    @Mock CurrentBuyerPort buyer; @Mock IdempotencyPort keys; @Mock OutboxPort outbox;
     PaymentWorker worker;
     @BeforeEach void setup() {
         when(manager.getTransaction(any())).thenReturn(txStatus);
@@ -32,6 +32,34 @@ class PaymentWorkerTest {
     private void claim(Payment p,int attempts,boolean abandoned) {
         when(store.find("payment")).thenReturn(Optional.of(p)); when(store.claim(eq("payment"),any())).thenReturn(new PaymentStore.Work(p,"token",attempts,abandoned));
         when(store.lock("payment")).thenReturn(p); when(store.ownsLease("payment","token")).thenReturn(true);
+    }
+    @Test void process_unclaimedPayment_neverCallsProvider() {
+        var p = PaymentDomainTest.pending(BigDecimal.TEN);
+        when(store.find("payment")).thenReturn(Optional.of(p));
+        worker.process("payment");
+        verify(store).claim(eq("payment"), any());
+        verifyNoInteractions(gateway, outbox);
+        verify(store, never()).save(any());
+    }
+    @Test void process_staleLease_doesNotPersistProviderResult() {
+        var p = PaymentDomainTest.pending(BigDecimal.TEN);
+        claim(p, 1, false);
+        when(store.ownsLease("payment", "token")).thenReturn(false);
+        when(gateway.query(p)).thenReturn(new PaymentGateway.Observation(PaymentGateway.Observation.State.SUCCEEDED, "123"));
+        worker.process("payment");
+        verify(store, never()).save(any());
+        verify(store, never()).complete(anyString(), anyString(), any(), anyString());
+        verifyNoInteractions(outbox);
+    }
+    @Test void reconciliation_success_persistsSettlementAndCompletesLease() {
+        var p = PaymentDomainTest.pending(BigDecimal.TEN);
+        claim(p, 2, false);
+        when(gateway.query(p)).thenReturn(new PaymentGateway.Observation(PaymentGateway.Observation.State.SUCCEEDED, "123"));
+        worker.process("payment");
+        verify(store).save(argThat(v -> v.status() == Payment.Status.SUCCEEDED && v.providerTransactionNo().equals("123")));
+        verify(outbox).enqueue(eq("PAYMENT_SUCCEEDED"), eq("payment"), anyString());
+        verify(store).complete(eq("payment"), eq("token"), any(), eq("SUCCEEDED"));
+        verify(gateway, never()).refund(any());
     }
     @Test void refund_abandonedLease_reconcilesWithoutResending() {
         var p=refund(Payment.RefundStatus.DISPATCHING); claim(p,8,true);

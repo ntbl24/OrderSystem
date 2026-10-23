@@ -1,57 +1,52 @@
-package cart.infrastructure.persistence;
+package io.order.backend.cart.infrastructure.persistence;
 
 import io.order.backend.cart.application.port.out.CartRepository;
-
-import io.order.backend.cart.domain.*;
-import io.order.backend.cart.infrastructure.persistence.*;
-import io.order.backend.cart.mapper.CartMapper;
-
-import java.util.*;
-
+import io.order.backend.cart.domain.Cart;
+import io.order.backend.cart.domain.CartId;
 import io.order.backend.user.domain.UserId;
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 
 @Repository
 @RequiredArgsConstructor
 @Transactional
 public class JpaCartAdapter implements CartRepository {
     private final CartJpaRepository repository;
-    private final CartMapper cartMapper;
 
-    @Override 
     public Optional<Cart> findById(CartId id) {
-        return repository.findById(id.value())
-            .map(cartMapper::toDomain);
+        return repository.findById(id.value()).map(CartPersistenceMapper::domain);
     }
 
-    public boolean existsById(String id) {
-        return findById(id).isPresent();
+    public boolean existsById(CartId id) {
+        return repository.existsById(id.value());
     }
 
-    public void deleteById(String id) {
-        repository.deleteById(id);
+    public void deleteById(CartId id) {
+        repository.deleteById(id.value());
     }
 
-    public Cart save(Cart d) {
-        if (d.getId() == null)
-            d.setId(UUID.randomUUID().toString());
-        var e = repository.findById(d.getId()).orElseGet(CartEntity::new);
-        if (e.version != null && !Objects.equals(e.version, d.getVersion()))
-            throw new org.springframework.orm.ObjectOptimisticLockingFailureException(CartEntity.class, d.getId());
-        if (d.getCreatedAt() == null)
-            d.setCreatedAt(java.time.LocalDateTime.now());
-        d.setUpdatedAt(java.time.LocalDateTime.now());
-        CartPersistenceMapper.copy(d, e);
-        return CartPersistenceMapper.domain(repository.saveAndFlush(e));
+    public Cart save(Cart cart) {
+        CartEntity entity = repository.findById(cart.getId().value()).orElseGet(CartEntity::new);
+        if (!Objects.equals(entity.version, cart.getVersion()))
+            throw new ObjectOptimisticLockingFailureException(CartEntity.class, cart.getId().value());
+        if (entity.createdAt == null)
+            entity.createdAt = LocalDateTime.now();
+        entity.updatedAt = LocalDateTime.now();
+        CartPersistenceMapper.copy(cart, entity);
+        return CartPersistenceMapper.domain(repository.saveAndFlush(entity));
     }
 
     public Optional<Cart> findByUserId(UserId userId) {
-        return repository.findByUserId(userId.value()).map(cartMapper::toDomain);
+        return repository.findByUserId(userId.value()).map(CartPersistenceMapper::domain);
     }
 
-    public void deleteByUserId(String userId) {
-        repository.deleteByUserId(userId);
+    public void deleteByUserId(UserId userId) {
+        repository.deleteByUserId(userId.value());
+        repository.flush();
     }
 }

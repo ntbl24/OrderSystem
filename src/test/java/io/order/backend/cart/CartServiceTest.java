@@ -1,73 +1,138 @@
 package io.order.backend.cart;
 
-import io.order.backend.cart.application.port.out.CartRepository;
-import io.order.backend.cart.application.port.out.ProductCatalogPort;
-import io.order.backend.cart.domain.Cart;
-import io.order.backend.cart.dto.CartDTO;
-import io.order.backend.cart.dto.CartItemDTO;
-import io.order.backend.cart.mapper.CartMapper;
+import io.order.backend.cart.application.port.in.*;
+import io.order.backend.cart.application.port.out.*;
+import io.order.backend.cart.application.usecase.*;
+import io.order.backend.cart.domain.*;
 import io.order.backend.common.application.port.CurrentBuyerPort;
 import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.product.domain.ProductId;
+import io.order.backend.user.domain.UserId;
 import java.math.BigDecimal;
-import java.util.Optional;
+import java.util.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import cart.application.usecase.CartService;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceTest {
     @Mock CartRepository carts;
-    @Mock CartMapper mapper;
     @Mock CurrentBuyerPort buyer;
     @Mock ProductCatalogPort products;
-    @InjectMocks CartService service;
+    final UserId user = UserId.generate();
+    final ProductId product = ProductId.generate();
+    CartAccessService access;
+    UpdateCartService updates;
+    CreateCartService creates;
+    CartQueryService queries;
+    CartCommandService commands;
+
+    @BeforeEach
+    void setUp() {
+        access = new CartAccessService(buyer, carts);
+        var pricing = new CartPricingService(products);
+        updates = new UpdateCartService(access, carts, pricing);
+        creates = new CreateCartService(access, carts, pricing);
+        queries = new CartQueryService(carts, access);
+        commands = new CartCommandService(carts, access);
+    }
+
+    void owner() { when(buyer.buyerId()).thenReturn(user.value().toString()); }
+    void catalog() {
+        when(products.findById(product)).thenReturn(Optional.of(
+                new ProductCatalogPort.Snapshot(product, "Catalog title", new BigDecimal("100"))));
+    }
+    void saves() { when(carts.save(any())).thenAnswer(i -> i.getArgument(0)); }
 
     @Test
-    void addItemToCart_whenAvailable_shouldPriceUsingCartOwnedCatalogSnapshot() {
-        when(buyer.buyerId()).thenReturn("buyer");
-        when(carts.findByUserId("buyer")).thenReturn(Optional.empty());
-        when(products.findById("p")).thenReturn(Optional.of(
-                new ProductCatalogPort.Snapshot("p", "Catalog title", new BigDecimal("100"))));
-        when(carts.save(any(Cart.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        CartDTO expected = new CartDTO();
-        when(mapper.toDto(any(Cart.class))).thenReturn(expected);
-        CartItemDTO item = new CartItemDTO();
-        item.setProductId("p");
-        item.setQuantity(2);
-        item.setUnitPrice(BigDecimal.ONE);
-
-        assertThat(service.addItemToCart("buyer", item)).isSameAs(expected);
-
-        var saved = ArgumentCaptor.forClass(Cart.class);
-        verify(carts).save(saved.capture());
-        assertThat(saved.getValue().getTotal()).isEqualByComparingTo("200");
-        assertThat(saved.getValue().getItems()).singleElement().satisfies(line -> {
-            assertThat(line.getProductName()).isEqualTo("Catalog title");
-            assertThat(line.getUnitPrice()).isEqualByComparingTo("100");
-            assertThat(line.getQuantity()).isEqualTo(2);
-        });
+    void createCart_whenAvailable_shouldUseServerPriceAndRejectDuplicate() {
+        owner(); catalog(); saves();
+        when(carts.findByUserId(user)).thenReturn(Optional.empty());
+        var command = new CreateCartCommand(user, List.of(new CartItemData(product, 2)));
+        Cart cart = creates.createCart(command);
+        assertThat(cart.getTotal()).isEqualByComparingTo("200");
+        assertThat(cart.getShippingCost()).isZero();
+        assertThat(cart.getItems().getFirst().getProductName()).isEqualTo("Catalog title");
+        when(carts.findByUserId(user)).thenReturn(Optional.of(cart));
+        assertThatThrownBy(() -> creates.createCart(command)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    void addItemToCart_whenCatalogMissing_shouldPreserveNotFoundError() {
-        when(buyer.buyerId()).thenReturn("buyer");
-        when(carts.findByUserId("buyer")).thenReturn(Optional.empty());
-        when(products.findById("p")).thenReturn(Optional.empty());
-        CartItemDTO item = new CartItemDTO();
-        item.setProductId("p");
-        item.setQuantity(1);
+    void updateCart_whenMerging_shouldPreserveOtherItemsAndRefreshPrices() {
+        owner(); catalog(); saves();
+        Cart cart = Cart.create(user);
+        ProductId other = ProductId.generate();
+        cart.addItem(product, "Old", 2, BigDecimal.ONE);
+        cart.addItem(other, "Other", 1, BigDecimal.TEN);
+        when(carts.findById(cart.getId())).thenReturn(Optional.of(cart));
+        when(products.findById(other)).thenReturn(Optional.of(
+                new ProductCatalogPort.Snapshot(other, "Other refreshed", new BigDecimal("20"))));
+        Cart result = updates.updateCart(cart.getId(), new UpdateCartCommand(List.of(new CartItemData(product, 3))));
+        assertThat(result.getItems()).hasSize(2);
+        assertThat(result.getItems().getFirst().getQuantity()).isEqualTo(3);
+        assertThat(result.getTotal()).isEqualByComparingTo("320");
+    }
 
-        assertThatThrownBy(() -> service.addItemToCart("buyer", item))
-                .isInstanceOf(ResourceNotFoundException.class).hasMessage("Product not found");
+    @Test
+    void addItemToCart_whenExisting_shouldAccumulateQuantity() {
+        owner(); catalog(); saves();
+        Cart cart = Cart.create(user);
+        cart.addItem(product, "Old", 2, BigDecimal.ONE);
+        when(carts.findByUserId(user)).thenReturn(Optional.of(cart));
+        assertThat(updates.addItemToCart(user, new CartItemData(product, 3)).getTotal()).isEqualByComparingTo("500");
+    }
+
+    @Test
+    void updateItemQuantity_whenZero_shouldRemoveWithoutCatalogLookup() {
+        owner(); saves();
+        Cart cart = Cart.create(user);
+        cart.addItem(product, "Old", 2, BigDecimal.ONE);
+        when(carts.findByUserId(user)).thenReturn(Optional.of(cart));
+        assertThat(updates.updateItemQuantity(user, product, 0).getItems()).isEmpty();
+        assertThat(cart.getTotal()).isZero();
+        verifyNoInteractions(products);
+    }
+
+    @Test
+    void addItemToCart_whenCatalogMissing_shouldNotSave() {
+        owner();
+        when(carts.findByUserId(user)).thenReturn(Optional.empty());
+        when(products.findById(product)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> updates.addItemToCart(user, new CartItemData(product, 2)))
+                .isInstanceOf(ResourceNotFoundException.class);
         verify(carts, never()).save(any());
+    }
+
+    @Test
+    void operations_whenForeignOwner_shouldHideCartAndNeverWrite() {
+        when(buyer.buyerId()).thenReturn(UserId.generate().value().toString());
+        Cart cart = Cart.create(user);
+        when(carts.findById(cart.getId())).thenReturn(Optional.of(cart));
+        assertThatThrownBy(() -> queries.getCartById(cart.getId())).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> commands.deleteCart(cart.getId())).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> commands.clearCart(user)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> updates.addItemToCart(user, new CartItemData(product, 1)))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(carts, never()).save(any());
+        verify(carts, never()).deleteById(any());
+        verify(carts, never()).deleteByUserId(any());
+    }
+
+    @Test
+    void queriesAndDeletes_whenOwned_shouldUseTypedIdentifiers() {
+        owner();
+        Cart cart = Cart.create(user);
+        when(carts.findById(cart.getId())).thenReturn(Optional.of(cart));
+        when(carts.findByUserId(user)).thenReturn(Optional.empty());
+        assertThat(queries.getCartById(cart.getId())).isSameAs(cart);
+        assertThat(queries.getCartByUserId(user)).isEmpty();
+        commands.deleteCart(cart.getId());
+        commands.clearCart(user);
+        verify(carts).deleteById(cart.getId());
+        verify(carts).deleteByUserId(user);
     }
 }

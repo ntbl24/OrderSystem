@@ -13,9 +13,9 @@ public interface CartRepository {
 
     Cart save(Cart cart);
 
-    boolean existsById(String id);
+    boolean existsById(CartId id);
 
     Optional<Cart> findById(CartId id);
 
-    void deleteById(String id);
+    void deleteById(CartId id);
 }

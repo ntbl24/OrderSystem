@@ -1,18 +1,18 @@
 package io.order.backend.product.application.port.in;
 
-import io.order.backend.product.dto.ProductDTO;
+import io.order.backend.product.domain.Product;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface ProductUseCase {
-    ProductDTO createProduct(ProductDTO dto);
-    ProductDTO updateProduct(String id, ProductDTO dto);
+    Product createProduct(ProductCommand command);
+    Product updateProduct(String id, ProductCommand command);
     void deleteProduct(String id);
-    ProductDTO getProductById(String id);
-    ProductDTO getProductBySku(String sku);
-    List<ProductDTO> getAllProducts();
-    Page<ProductDTO> getAllProducts(Pageable pageable);
-    List<ProductDTO> getProductsByCategory(String category);
+    Product getProductById(String id);
+    Product getProductBySku(String sku);
+    List<Product> getAllProducts();
+    Page<Product> getAllProducts(Pageable pageable);
+    List<Product> getProductsByCategory(String category);
     void updateStock(String id, int quantity);
 }

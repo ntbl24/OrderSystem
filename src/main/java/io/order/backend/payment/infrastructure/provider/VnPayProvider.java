@@ -1,8 +1,8 @@
 package io.order.backend.payment.infrastructure.provider;
 
-import io.order.backend.payment.application.port.PaymentGateway;
-import io.order.backend.payment.application.port.PaymentNotification;
-import io.order.backend.payment.config.VNPayConfig;
+import io.order.backend.payment.application.port.out.PaymentGateway;
+import io.order.backend.payment.application.port.in.PaymentNotification;
+import io.order.backend.payment.infrastructure.config.VNPayConfig;
 import io.order.backend.payment.domain.Payment;
 import okhttp3.*;
 import org.springframework.stereotype.Component;

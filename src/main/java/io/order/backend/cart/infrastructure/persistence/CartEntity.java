@@ -2,6 +2,7 @@ package io.order.backend.cart.infrastructure.persistence;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
@@ -11,12 +12,15 @@ public class CartEntity {
     @Column(updatable = false, nullable = false)
     public UUID id;
 
+    public LocalDateTime createdAt;
+    public LocalDateTime updatedAt;
+    public boolean deleted;
     public UUID userId;
     @Version
     public Long version;
     @ElementCollection
     @CollectionTable(name = "cart_item", joinColumns = @JoinColumn(name = "cart_id"))
-    @OrderColumn(name = "item_number")
+    @OrderColumn(name = "line_index")
     public List<CartItemEntity> items = new ArrayList<>();
     @Column(precision = 19, scale = 0)
     public BigDecimal subTotal;

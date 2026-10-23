@@ -14,11 +14,11 @@ description: >
 src/main/java/com/example/
 ├── domain/                     ← Pure Java. Zero framework dependencies.
 │   ├── model/                  ← Entities, value objects, aggregates
+│   └── service/                ← Domain services (pure business logic)
+├── application/                ← Orchestrates use cases. Spring allowed here.
 │   ├── port/
 │   │   ├── in/                 ← Use case interfaces (driving ports)
 │   │   └── out/                ← Repository/external interfaces (driven ports)
-│   └── service/                ← Domain services (pure business logic)
-├── application/                ← Orchestrates use cases. Spring allowed here.
 │   └── usecase/                ← @Service implementations of domain ports
 └── infrastructure/             ← All framework/DB/HTTP details
     ├── persistence/            ← JPA adapters implementing out ports

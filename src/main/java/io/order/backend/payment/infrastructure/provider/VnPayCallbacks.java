@@ -1,6 +1,6 @@
 package io.order.backend.payment.infrastructure.provider;
 
-import io.order.backend.payment.application.port.PaymentUseCase;
+import io.order.backend.payment.application.port.in.PaymentUseCase;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;

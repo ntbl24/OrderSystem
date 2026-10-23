@@ -8,7 +8,8 @@ import io.order.backend.common.exception.ResourceNotFoundException;
 import io.order.backend.user.domain.UserId;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor 
+@org.springframework.stereotype.Service
+@RequiredArgsConstructor
 public class CartAccessService {
     private final CurrentBuyerPort buyer;
     private final CartRepository cartRepository;
@@ -30,12 +31,8 @@ public class CartAccessService {
         .orElseThrow(() -> new ResourceNotFoundException("Cart not found")));
     }
 
-    public Cart byUser(String id) {
+    public Cart byUser(UserId id) {
         owner(id);
-        return cartRepository.findByUserId(id).orElseGet(() -> {
-            var c = new Cart();
-            c.setUserId(id);
-            return c;
-        });
+        return cartRepository.findByUserId(id).orElseGet(() -> Cart.create(id));
     }
 }

@@ -1,11 +1,11 @@
 package io.order.backend.checkout.application.port.out;
 
-import io.order.backend.order.dto.OrderDTO;
+import io.order.backend.order.application.port.in.OrderResult;
 import java.math.BigDecimal;
 import java.util.List;
 
 public interface PlaceOrderPort {
-    OrderDTO place(Command command);
+    OrderResult place(Command command);
 
     record Command(String buyerId, String sellerId, List<Line> lines, BigDecimal subtotal,
                    String shippingAddress, String notes) {
