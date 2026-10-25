@@ -1,39 +1,43 @@
 package io.order.backend.product.infrastructure.persistence;
 
-import io.order.backend.product.domain.*;
+import io.order.backend.product.domain.Product;
+import io.order.backend.product.domain.ProductId;
+import java.util.Objects;
 
 public final class ProductPersistenceMapper {
+    private ProductPersistenceMapper() {}
+
     public static Product domain(ProductEntity e) {
-        Product d = new Product();
-        d.setId(e.id);
-        d.setCreatedAt(e.createdAt);
-        d.setUpdatedAt(e.updatedAt);
-        d.setDeleted(e.deleted);
-        d.setTitle(e.title);
-        d.setCategory(e.category);
-        d.setDescription(e.description);
-        d.setPrice(e.price);
-        d.setStock(e.stock);
-        d.setSku(e.sku);
-        d.setSellerId(e.sellerId);
-        d.setReserved(e.reserved);
-        d.setVersion(e.version);
-        return d;
+        if (e == null) {
+            return null;
+        }
+        return Product.restore(
+                e.getId() != null ? new ProductId(e.getId()) : null,
+                e.isDeleted(),
+                e.getTitle(),
+                e.getCategory(),
+                e.getDescription(),
+                e.getPrice(),
+                e.getStock(),
+                e.getSku(),
+                e.getSellerId(),
+                e.getReserved(),
+                e.getVersion()
+        );
     }
 
     public static void copy(Product d, ProductEntity e) {
-        e.id = d.getId().value().toString();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
-        e.deleted = d.isDeleted();
-        e.title = d.getTitle();
-        e.category = d.getCategory();
-        e.description = d.getDescription();
-        e.price = d.getPrice();
-        e.stock = d.getStock();
-        e.sku = d.getSku();
-        e.sellerId = d.getSellerId();
-        e.reserved = d.getReserved();
-        e.version = d.getVersion();
+        Objects.requireNonNull(d, "Domain product cannot be null");
+        Objects.requireNonNull(e, "Entity cannot be null");
+        e.update(d.getId().value(), d.getTitle(), d.getCategory(), d.getDescription(), d.getPrice(), d.getStock(), d.getSku(), d.getSellerId(), d.getReserved());
+    }
+
+    public static ProductEntity toEntity(Product d) {
+        if (d == null) {
+            return null;
+        }
+        ProductEntity e = new ProductEntity();
+        copy(d, e);
+        return e;
     }
 }

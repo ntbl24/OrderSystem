@@ -3,12 +3,15 @@ package io.order.backend.shipping.domain;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import io.order.backend.common.domain.BaseEntity;
-public class Shipment extends BaseEntity {
+import io.order.backend.order.domain.OrderId;
+import io.order.backend.user.domain.UserId;
+
+public class Shipment {
+    private ShipmentId id;
     private Long version;
-    private String orderId;
-    private String userId;
-    private String trackingNumber;
+    private OrderId orderId;
+    private UserId userId;
+    private TrackingNumber trackingNumber;
     private String carrier;
     private String serviceType;
     private BigDecimal weight;
@@ -36,69 +39,212 @@ public class Shipment extends BaseEntity {
     private String customsInfo;
     private String customsValue;
     private String customsCurrency;
+    private boolean deleted;
+
+    public ShipmentId getId() { return id; }
     public Long getVersion() { return version; }
-    public void setVersion(Long version) { this.version = version; }
-    public String getOrderId() { return orderId; }
-    public void setOrderId(String orderId) { this.orderId = orderId; }
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
-    public String getTrackingNumber() { return trackingNumber; }
-    public void setTrackingNumber(String trackingNumber) { this.trackingNumber = trackingNumber; }
+    public OrderId getOrderId() { return orderId; }
+    public UserId getUserId() { return userId; }
+    public TrackingNumber getTrackingNumber() { return trackingNumber; }
     public String getCarrier() { return carrier; }
-    public void setCarrier(String carrier) { this.carrier = carrier; }
     public String getServiceType() { return serviceType; }
-    public void setServiceType(String serviceType) { this.serviceType = serviceType; }
     public BigDecimal getWeight() { return weight; }
-    public void setWeight(BigDecimal weight) { this.weight = weight; }
     public String getWeightUnit() { return weightUnit; }
-    public void setWeightUnit(String weightUnit) { this.weightUnit = weightUnit; }
     public BigDecimal getShippingCost() { return shippingCost; }
-    public void setShippingCost(BigDecimal shippingCost) { this.shippingCost = shippingCost; }
     public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
     public LocalDateTime getEstimatedDeliveryDate() { return estimatedDeliveryDate; }
-    public void setEstimatedDeliveryDate(LocalDateTime estimatedDeliveryDate) { this.estimatedDeliveryDate = estimatedDeliveryDate; }
     public LocalDateTime getActualDeliveryDate() { return actualDeliveryDate; }
-    public void setActualDeliveryDate(LocalDateTime actualDeliveryDate) { this.actualDeliveryDate = actualDeliveryDate; }
     public String getOriginAddress() { return originAddress; }
-    public void setOriginAddress(String originAddress) { this.originAddress = originAddress; }
     public String getOriginCity() { return originCity; }
-    public void setOriginCity(String originCity) { this.originCity = originCity; }
     public String getOriginState() { return originState; }
-    public void setOriginState(String originState) { this.originState = originState; }
     public String getOriginCountry() { return originCountry; }
-    public void setOriginCountry(String originCountry) { this.originCountry = originCountry; }
     public String getOriginPostalCode() { return originPostalCode; }
-    public void setOriginPostalCode(String originPostalCode) { this.originPostalCode = originPostalCode; }
     public String getDestinationAddress() { return destinationAddress; }
-    public void setDestinationAddress(String destinationAddress) { this.destinationAddress = destinationAddress; }
     public String getDestinationCity() { return destinationCity; }
-    public void setDestinationCity(String destinationCity) { this.destinationCity = destinationCity; }
     public String getDestinationState() { return destinationState; }
-    public void setDestinationState(String destinationState) { this.destinationState = destinationState; }
     public String getDestinationCountry() { return destinationCountry; }
-    public void setDestinationCountry(String destinationCountry) { this.destinationCountry = destinationCountry; }
     public String getDestinationPostalCode() { return destinationPostalCode; }
-    public void setDestinationPostalCode(String destinationPostalCode) { this.destinationPostalCode = destinationPostalCode; }
     public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
     public String getLabelUrl() { return labelUrl; }
-    public void setLabelUrl(String labelUrl) { this.labelUrl = labelUrl; }
     public String getReturnLabelUrl() { return returnLabelUrl; }
-    public void setReturnLabelUrl(String returnLabelUrl) { this.returnLabelUrl = returnLabelUrl; }
     public boolean isSignatureRequired() { return signatureRequired; }
-    public void setSignatureRequired(boolean signatureRequired) { this.signatureRequired = signatureRequired; }
     public boolean isInsuranceRequired() { return insuranceRequired; }
-    public void setInsuranceRequired(boolean insuranceRequired) { this.insuranceRequired = insuranceRequired; }
     public BigDecimal getDeclaredValue() { return declaredValue; }
-    public void setDeclaredValue(BigDecimal declaredValue) { this.declaredValue = declaredValue; }
     public String getCustomsInfo() { return customsInfo; }
-    public void setCustomsInfo(String customsInfo) { this.customsInfo = customsInfo; }
     public String getCustomsValue() { return customsValue; }
-    public void setCustomsValue(String customsValue) { this.customsValue = customsValue; }
     public String getCustomsCurrency() { return customsCurrency; }
-    public void setCustomsCurrency(String customsCurrency) { this.customsCurrency = customsCurrency; }
-    public BigDecimal calculateShippingCost(){
+
+    public static Shipment create(OrderId orderId,
+        UserId userId,
+        TrackingNumber trackingNumber,
+        String carrier,
+        String serviceType,
+        BigDecimal weight,
+        String weightUnit,
+        BigDecimal shippingCost,
+        String status,
+        LocalDateTime estimatedDeliveryDate,
+        LocalDateTime actualDeliveryDate,
+        String originAddress,
+        String originCity,
+        String originState,
+        String originCountry,
+        String originPostalCode,
+        String destinationAddress,
+        String destinationCity,
+        String destinationState,
+        String destinationCountry,
+        String destinationPostalCode,
+        String notes,
+        String labelUrl,
+        String returnLabelUrl,
+        boolean signatureRequired,
+        boolean insuranceRequired,
+        BigDecimal declaredValue,
+        String customsInfo,
+        String customsValue,
+        String customsCurrency
+    ) {
+        return new Shipment(ShipmentId.generate(), orderId, userId, trackingNumber, 
+        carrier, serviceType, weight, weightUnit, shippingCost, status, 
+        estimatedDeliveryDate, actualDeliveryDate, 
+        originAddress, originCity, originState, originCountry, originPostalCode, 
+        destinationAddress, destinationCity, destinationState, destinationCountry, 
+        destinationPostalCode, notes, labelUrl, returnLabelUrl, 
+        signatureRequired, insuranceRequired, declaredValue, 
+        customsInfo, customsValue, customsCurrency);
+    }
+
+    public void update(
+        OrderId orderId,
+        UserId userId,
+        TrackingNumber trackingNumber,
+        String carrier,
+        String serviceType,
+        BigDecimal weight,
+        String weightUnit,
+        BigDecimal shippingCost,
+        String status,
+        LocalDateTime estimatedDeliveryDate,
+        LocalDateTime actualDeliveryDate,
+        String originAddress,
+        String originCity,
+        String originState,
+        String originCountry,
+        String originPostalCode,
+        String destinationAddress,
+        String destinationCity,
+        String destinationState,
+        String destinationCountry,
+        String destinationPostalCode,
+        String notes,
+        String labelUrl,
+        String returnLabelUrl,
+        boolean signatureRequired,
+        boolean insuranceRequired,
+        BigDecimal declaredValue,
+        String customsInfo,
+        String customsValue,
+        String customsCurrency) {
+            this.orderId = orderId;
+            this.userId = userId;
+            this.trackingNumber = trackingNumber;
+            this.carrier = carrier;
+            this.serviceType = serviceType;
+            this.weight = weight;
+            this.weightUnit = weightUnit;
+            this.shippingCost = shippingCost;
+            this.status = status;
+            this.estimatedDeliveryDate = estimatedDeliveryDate;
+            this.actualDeliveryDate = actualDeliveryDate;
+            this.originAddress = originAddress;
+            this.originCity = originCity;
+            this.originState = originState;
+            this.originCountry = originCountry;
+            this.originPostalCode = originPostalCode;
+            this.destinationAddress = destinationAddress;
+            this.destinationCity = destinationCity;
+            this.destinationState = destinationState;
+            this.destinationCountry = destinationCountry;
+            this.destinationPostalCode = destinationPostalCode;
+            this.notes = notes;
+            this.labelUrl = labelUrl;
+            this.returnLabelUrl = returnLabelUrl;
+            this.signatureRequired = signatureRequired;
+            this.insuranceRequired = insuranceRequired;
+            this.declaredValue = declaredValue;
+            this.customsInfo = customsInfo;
+            this.customsValue = customsValue;
+            this.customsCurrency = customsCurrency;
+        }
+    public Shipment(){}
+
+    public Shipment(
+        ShipmentId id,
+        OrderId orderId,
+        UserId userId,
+        TrackingNumber trackingNumber,
+        String carrier,
+        String serviceType,
+        BigDecimal weight,
+        String weightUnit,
+        BigDecimal shippingCost,
+        String status,
+        LocalDateTime estimatedDeliveryDate,
+        LocalDateTime actualDeliveryDate,
+        String originAddress,
+        String originCity,
+        String originState,
+        String originCountry,
+        String originPostalCode,
+        String destinationAddress,
+        String destinationCity,
+        String destinationState,
+        String destinationCountry,
+        String destinationPostalCode,
+        String notes,
+        String labelUrl,
+        String returnLabelUrl,
+        boolean signatureRequired,
+        boolean insuranceRequired,
+        BigDecimal declaredValue,
+        String customsInfo,
+        String customsValue,
+        String customsCurrency) {
+        this.id = id;
+        this.orderId = orderId;
+        this.userId = userId;
+        this.trackingNumber = trackingNumber;
+        this.carrier = carrier;
+        this.serviceType = serviceType;
+        this.weight = weight;
+        this.weightUnit = weightUnit;
+        this.shippingCost = shippingCost;
+        this.status = status;
+        this.estimatedDeliveryDate = estimatedDeliveryDate;
+        this.actualDeliveryDate = actualDeliveryDate;
+        this.originAddress = originAddress;
+        this.originCity = originCity;
+        this.originState = originState;
+        this.originCountry = originCountry;
+        this.originPostalCode = originPostalCode;
+        this.destinationAddress = destinationAddress;
+        this.destinationCity = destinationCity;
+        this.destinationState = destinationState;
+        this.destinationCountry = destinationCountry;
+        this.destinationPostalCode = destinationPostalCode;
+        this.notes = notes;
+        this.labelUrl = labelUrl;
+        this.returnLabelUrl = returnLabelUrl;
+        this.signatureRequired = signatureRequired;
+        this.insuranceRequired = insuranceRequired;
+        this.declaredValue = declaredValue;
+        this.customsInfo = customsInfo;
+        this.customsValue = customsValue;
+        this.customsCurrency = customsCurrency;
+    }
+
+    public void calculateShippingCost(){
         BigDecimal baseCost = BigDecimal.valueOf(5.00);
         BigDecimal perKgRate = BigDecimal.valueOf(1.50);
         BigDecimal weight = getWeight() != null ? getWeight() : BigDecimal.ONE;
@@ -116,7 +262,7 @@ public class Shipment extends BaseEntity {
             cost = cost.add(declaredValue.multiply(BigDecimal.valueOf(0.02)));
         }
 
-        return cost.setScale(2, java.math.RoundingMode.HALF_UP);
+        this.shippingCost = cost.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     public void markCreated() { status = "created"; }
@@ -131,8 +277,24 @@ public class Shipment extends BaseEntity {
         if ("delivered".equals(status)) actualDeliveryDate = now;
     }
 
-    public void updateTracking(String trackingNumber, String status, LocalDateTime now) {
+    public void updateTracking(TrackingNumber trackingNumber, String status, LocalDateTime now) {
         this.trackingNumber = trackingNumber;
         updateStatus(status, now);
+    }
+
+    public ShipmentId getShipmentId() {
+        return id;
+    }
+
+    public OrderId getOrderIdentifier() {
+        return orderId;
+    }
+
+    public UserId getUserIdentifier() {
+        return userId;
+    }
+
+    public TrackingNumber getTrackingNumberVo() {
+        return trackingNumber;
     }
 }

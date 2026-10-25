@@ -69,4 +69,20 @@ public record Payment(String id, String orderId, String buyerId, BigDecimal amou
         return new Payment(id, orderId, buyerId, amount, currency, transactionRef, createdAt, expiresAt,
                 status, providerTransactionNo, next, refundRequestId, refundActor, refundReason, refundCreatedAt);
     }
+
+    public PaymentId paymentId() {
+        return id != null ? PaymentId.of(id) : null;
+    }
+
+    public io.order.backend.order.domain.OrderId orderIdentifier() {
+        return orderId != null ? io.order.backend.order.domain.OrderId.of(orderId) : null;
+    }
+
+    public io.order.backend.user.domain.UserId buyerIdentifier() {
+        return buyerId != null ? io.order.backend.user.domain.UserId.of(buyerId) : null;
+    }
+
+    public TransactionRef transactionRefVo() {
+        return transactionRef != null ? TransactionRef.of(transactionRef) : null;
+    }
 }

@@ -38,6 +38,15 @@ public record ShipmentResponse(
         String customsCurrency
 ) {
     public static ShipmentResponse from(Shipment value) {
-        return new ShipmentResponse(value.getId(), value.getOrderId(), value.getUserId(), value.getTrackingNumber(), value.getCarrier(), value.getServiceType(), value.getWeight(), value.getWeightUnit(), value.getShippingCost(), value.getStatus(), value.getEstimatedDeliveryDate(), value.getActualDeliveryDate(), value.getOriginAddress(), value.getOriginCity(), value.getOriginState(), value.getOriginCountry(), value.getOriginPostalCode(), value.getDestinationAddress(), value.getDestinationCity(), value.getDestinationState(), value.getDestinationCountry(), value.getDestinationPostalCode(), value.getNotes(), value.getLabelUrl(), value.getReturnLabelUrl(), value.isSignatureRequired(), value.isInsuranceRequired(), value.getDeclaredValue(), value.getCustomsInfo(), value.getCustomsValue(), value.getCustomsCurrency());
+        return new ShipmentResponse(value.getId().toString(), value.getOrderId().toString(), 
+        value.getUserId().toString(), value.getTrackingNumber().toString(), value.getCarrier(), value.getServiceType(), 
+        value.getWeight(), value.getWeightUnit(), value.getShippingCost(), 
+        value.getStatus(), value.getEstimatedDeliveryDate(), value.getActualDeliveryDate(), 
+        value.getOriginAddress(), value.getOriginCity(), value.getOriginState(), 
+        value.getOriginCountry(), value.getOriginPostalCode(), value.getDestinationAddress(),
+        value.getDestinationCity(), value.getDestinationState(), value.getDestinationCountry(), 
+        value.getDestinationPostalCode(), value.getNotes(), value.getLabelUrl(), value.getReturnLabelUrl(), 
+        value.isSignatureRequired(), value.isInsuranceRequired(), value.getDeclaredValue(), 
+        value.getCustomsInfo(), value.getCustomsValue(), value.getCustomsCurrency());
     }
 }

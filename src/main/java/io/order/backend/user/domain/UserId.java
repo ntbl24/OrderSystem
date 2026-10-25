@@ -10,4 +10,8 @@ public record UserId(UUID value) {
     public static UserId of(String value) {
         return new UserId(UUID.fromString(value));
     }
+
+    public static UserId of(UUID value) {
+        return new UserId(value);
+    }
 }

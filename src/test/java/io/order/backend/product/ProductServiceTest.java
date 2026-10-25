@@ -1,6 +1,8 @@
 package io.order.backend.product;
 
+import io.order.backend.product.application.port.in.CreateProductCommand;
 import io.order.backend.product.application.port.in.ProductCommand;
+import io.order.backend.product.application.port.in.UpdateProductCommand;
 import io.order.backend.product.application.port.out.ProductRepository;
 import io.order.backend.product.application.usecase.ProductService;
 import io.order.backend.product.domain.Product;
@@ -9,9 +11,9 @@ import io.order.backend.product.infrastructure.web.dto.ProductRequest;
 import io.order.backend.product.infrastructure.web.dto.ProductResponse;
 import java.math.BigDecimal;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,8 +23,15 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
-    @Mock ProductRepository products;
-    @InjectMocks ProductService service;
+    @Mock
+    ProductRepository products;
+
+    ProductService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new ProductService(products);
+    }
 
     @Test
     void createProduct_whenValidRequest_shouldMapCommandAndResponseWithoutTrustingRequestId() {
@@ -43,7 +52,7 @@ class ProductServiceTest {
             return product;
         });
 
-        ProductResponse response = ProductResponse.from(service.createProduct(request.toCommand()));
+        ProductResponse response = ProductResponse.from(service.createProduct(request.toCreateCommand()));
 
         assertThat(response.id()).isEqualTo(generated.value().toString());
         assertThat(response.title()).isEqualTo("Title");
@@ -55,10 +64,10 @@ class ProductServiceTest {
     @Test
     void updateProduct_whenReserved_shouldPreserveIdentityVersionAndReservation() {
         Product original = existing();
-        when(products.lockById(original.getId().value().toString())).thenReturn(Optional.of(original));
+        when(products.lockById(original.getId())).thenReturn(Optional.of(original));
         when(products.save(original)).thenReturn(original);
 
-        Product updated = service.updateProduct(original.getId().value().toString(), command("seller", 12));
+        Product updated = service.updateProduct(original.getId(), updateCommand("seller", 12));
 
         assertThat(updated).isSameAs(original);
         assertThat(updated.getVersion()).isEqualTo(7L);
@@ -70,10 +79,10 @@ class ProductServiceTest {
     @Test
     void updateProduct_whenReservedAndSellerChanges_shouldRejectWithoutSaving() {
         Product original = existing();
-        String id = original.getId().value().toString();
+        ProductId id = original.getId();
         when(products.lockById(id)).thenReturn(Optional.of(original));
 
-        assertThatThrownBy(() -> service.updateProduct(id, command("other", 12)))
+        assertThatThrownBy(() -> service.updateProduct(id, updateCommand("other", 12)))
                 .isInstanceOf(IllegalStateException.class).hasMessage("Cannot change seller with reserved stock");
         assertThat(original.getSellerId()).isEqualTo("seller");
         verify(products, never()).save(any());
@@ -82,7 +91,7 @@ class ProductServiceTest {
     @Test
     void updateStock_whenBelowReserved_shouldRejectAndKeepStockUnchanged() {
         Product original = existing();
-        String id = original.getId().value().toString();
+        ProductId id = original.getId();
         when(products.lockById(id)).thenReturn(Optional.of(original));
 
         assertThatThrownBy(() -> service.updateStock(id, 2)).isInstanceOf(IllegalArgumentException.class);
@@ -93,12 +102,12 @@ class ProductServiceTest {
     @Test
     void deleteProduct_whenReserved_shouldNotDelete() {
         Product original = existing();
-        String id = original.getId().value().toString();
+        ProductId id = original.getId();
         when(products.existsById(id)).thenReturn(true);
         when(products.lockById(id)).thenReturn(Optional.of(original));
 
         assertThatThrownBy(() -> service.deleteProduct(id)).isInstanceOf(IllegalStateException.class);
-        verify(products, never()).deleteById(any());
+        verify(products, never()).deleteById(any(ProductId.class));
     }
 
     private Product existing() {
@@ -112,7 +121,7 @@ class ProductServiceTest {
         return product;
     }
 
-    private ProductCommand command(String seller, int stock) {
-        return new ProductCommand("Updated", "Category", "Description", new BigDecimal("200"), stock, "SKU", seller);
+    private UpdateProductCommand updateCommand(String seller, int stock) {
+        return new UpdateProductCommand("Updated", "Category", "Description", new BigDecimal("200"), stock, "SKU", seller);
     }
 }

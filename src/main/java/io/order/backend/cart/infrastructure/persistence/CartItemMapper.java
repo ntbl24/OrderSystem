@@ -9,15 +9,10 @@ public final class CartItemMapper {
     }
     
     public static CartItem toDomain(CartItemEntity entity) {
-        return new CartItem(new ProductId(entity.productId), entity.productName, entity.quantity, entity.unitPrice);
+        return new CartItem(new ProductId(entity.getProductId()), entity.getProductName(), entity.getQuantity(), entity.getUnitPrice());
     }
 
     public static CartItemEntity toEntity(CartItem item) {
-        CartItemEntity entity = new CartItemEntity();
-        entity.productId = item.getProductId().value();
-        entity.productName = item.getProductName();
-        entity.quantity = item.getQuantity();
-        entity.unitPrice = item.getUnitPrice();
-        return entity;
+        return new CartItemEntity(item.getProductId().value(), item.getProductName(), item.getQuantity(), item.getUnitPrice(), item.getSubTotal());
     }
 }

@@ -1,12 +1,15 @@
 package io.order.backend.order.domain;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import io.order.backend.common.domain.BaseEntity;
 
-public class Order extends BaseEntity {
+public class Order {
+    private OrderId id;
     private String userId;
     private String orderNumber;
     private List<OrderItem> items;
@@ -20,15 +23,18 @@ public class Order extends BaseEntity {
     private LocalDateTime estimatedDeliveryDate;
     private String notes;
     private String sellerId;
-    private java.time.Instant expiresAt;
+    private Instant expiresAt;
     private String paymentId;
     private String reviewPaymentId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private boolean deleted;
 
     public static Order place(String ownerId, String sellerId, List<OrderItem> items,
-            BigDecimal subtotal, String shippingAddress, String notes, java.time.Instant now,
+            BigDecimal subtotal, String shippingAddress, String notes, Instant now,
             LocalDateTime orderDate) {
         var order = new Order();
-        order.setId(java.util.UUID.randomUUID().toString());
+        order.setId(UUID.randomUUID().toString());
         order.orderNumber = "ORD-" + order.getId();
         order.userId = ownerId;
         order.sellerId = sellerId;
@@ -45,6 +51,7 @@ public class Order extends BaseEntity {
         order.expiresAt = now.plusSeconds(900);
         return order;
     }
+
     public String getReviewPaymentId() {
         return reviewPaymentId;
     }
@@ -255,4 +262,31 @@ public class Order extends BaseEntity {
         this.notes = notes;
     }
 
+    public OrderId getOrderId() {
+        return id;
+    }
+
+    public OrderNumber getOrderNumberVo() {
+        return orderNumber != null ? OrderNumber.of(orderNumber) : null;
+    }
+
+    public void setOrderNumberVo(OrderNumber orderNumber) {
+        this.orderNumber = orderNumber != null ? orderNumber.value() : null;
+    }
+
+    public io.order.backend.user.domain.UserId getUserIdentifier() {
+        return userId != null ? io.order.backend.user.domain.UserId.of(userId) : null;
+    }
+
+    public void setUserIdentifier(io.order.backend.user.domain.UserId userId) {
+        this.userId = userId != null ? userId.value().toString() : null;
+    }
+
+    public io.order.backend.payment.domain.PaymentId getPaymentIdentifier() {
+        return paymentId != null ? io.order.backend.payment.domain.PaymentId.of(paymentId) : null;
+    }
+
+    public void setPaymentIdentifier(io.order.backend.payment.domain.PaymentId paymentId) {
+        this.paymentId = paymentId != null ? paymentId.value().toString() : null;
+    }
 }

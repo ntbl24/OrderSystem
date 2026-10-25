@@ -1,7 +1,7 @@
 package io.order.backend.product.infrastructure.web.dto;
 
-import java.math.BigDecimal;
 import io.order.backend.product.domain.Product;
+import java.math.BigDecimal;
 
 public record ProductResponse(
         String title,
@@ -14,6 +14,18 @@ public record ProductResponse(
         String sellerId
 ) {
     public static ProductResponse from(Product value) {
-        return new ProductResponse(value.getTitle(), value.getCategory(), value.getDescription(), value.getPrice(), value.getStock(), value.getSku(), value.getId().value().toString(), value.getSellerId());
+        if (value == null) {
+            return null;
+        }
+        return new ProductResponse(
+                value.getTitle(),
+                value.getCategory(),
+                value.getDescription(),
+                value.getPrice(),
+                value.getStock(),
+                value.getSku(),
+                value.getId() != null ? value.getId().value().toString() : null,
+                value.getSellerId()
+        );
     }
 }

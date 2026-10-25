@@ -2,7 +2,7 @@ package io.order.backend.product.application.port.in;
 
 import java.math.BigDecimal;
 
-public record ProductCommand(
+public record CreateProductCommand(
         String title,
         String category,
         String description,

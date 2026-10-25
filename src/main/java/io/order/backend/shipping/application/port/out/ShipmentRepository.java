@@ -2,18 +2,21 @@ package io.order.backend.shipping.application.port.out;
 
 import java.util.Optional;
 
+import io.order.backend.order.domain.OrderId;
 import io.order.backend.shipping.domain.Shipment;
+import io.order.backend.shipping.domain.ShipmentId;
+import io.order.backend.shipping.domain.TrackingNumber;
 
 public interface ShipmentRepository {
-    Optional<Shipment> findById(String shipmentId);
+    Optional<Shipment> findById(ShipmentId shipmentId);
 
     Shipment save(Shipment shipment);
 
-    boolean existsById(String id);
+    boolean existsById(ShipmentId id);
 
-    void deleteById(String id);
+    void deleteById(ShipmentId id);
 
-    Optional<Shipment> findByOrderId(String orderId);
+    Optional<Shipment> findByOrderId(OrderId orderId);
 
-    Optional<Shipment> findByTrackingNumber(String trackingNumber);
+    Optional<Shipment> findByTrackingNumber(TrackingNumber trackingNumber);
 }

@@ -8,29 +8,14 @@ public final class CartPersistenceMapper {
     private CartPersistenceMapper() {}
 
     public static Cart domain(CartEntity entity) {
-        return Cart.restore(new CartId(entity.id), new UserId(entity.userId), entity.version,
-                entity.items.stream().map(CartItemMapper::toDomain).toList(),
-                entity.shippingCost, entity.tax, entity.couponCode, entity.discount);
+        return Cart.restore(new CartId(entity.getId()), new UserId(entity.getUserId()), entity.getVersion(),
+                entity.getItems().stream().map(CartItemMapper::toDomain).toList(),
+                entity.getShippingCost(), entity.getTax(), entity.getCouponCode(), entity.getDiscount());
     }
 
     public static void copy(Cart cart, CartEntity entity) {
-        entity.id = cart.getId().value();
-        entity.userId = cart.getUserId().value();
-        entity.items.clear();
-        entity.items.addAll(cart.getItems().stream().map(i -> {
-            CartItemEntity item = new CartItemEntity();
-            item.productId = i.getProductId().value();
-            item.productName = i.getProductName();
-            item.quantity = i.getQuantity();
-            item.unitPrice = i.getUnitPrice();
-            item.subTotal = i.getSubTotal();
-            return item;
-        }).toList());
-        entity.subTotal = cart.getSubTotal();
-        entity.shippingCost = cart.getShippingCost();
-        entity.total = cart.getTotal();
-        entity.tax = cart.getTax();
-        entity.couponCode = cart.getCouponCode();
-        entity.discount = cart.getDiscount();
+        entity.update(cart.getId().value(), cart.getUserId().value(), cart.getSubTotal(), cart.getShippingCost(), cart.getTotal(), cart.getTax(), cart.getCouponCode(), cart.getDiscount());
+        entity.clearItem();
+        cart.getItems().forEach(i -> entity.addItem(CartItemMapper.toEntity(i)));
     }
 }

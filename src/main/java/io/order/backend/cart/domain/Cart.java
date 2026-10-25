@@ -18,6 +18,7 @@ public class Cart {
     private BigDecimal tax = BigDecimal.ZERO;
     private String couponCode;
     private BigDecimal discount = BigDecimal.ZERO;
+    private boolean deleted;
 
     public Cart(CartId id, UserId userId) {
         this.id = Objects.requireNonNull(id);

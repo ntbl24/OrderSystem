@@ -1,36 +1,82 @@
 package io.order.backend.cart.infrastructure.persistence;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.*;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "cart")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class CartEntity {
     @Id
     @Column(updatable = false, nullable = false)
-    public UUID id;
+    private UUID id;
 
-    public LocalDateTime createdAt;
-    public LocalDateTime updatedAt;
-    public boolean deleted;
-    public UUID userId;
+    @CreationTimestamp
+    @Column(updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    private Instant updatedAt;
+    private boolean deleted;
+    private UUID userId;
     @Version
-    public Long version;
+    private Long version;
     @ElementCollection
     @CollectionTable(name = "cart_item", joinColumns = @JoinColumn(name = "cart_id"))
     @OrderColumn(name = "line_index")
-    public List<CartItemEntity> items = new ArrayList<>();
+    private List<CartItemEntity> items = new ArrayList<>();
     @Column(precision = 19, scale = 0)
-    public BigDecimal subTotal;
+    private BigDecimal subTotal;
     @Column(precision = 19, scale = 0)
-    public BigDecimal shippingCost;
+    private BigDecimal shippingCost;
     @Column(precision = 19, scale = 0)
-    public BigDecimal total;
+    private BigDecimal total;
     @Column(precision = 19, scale = 0)
-    public BigDecimal tax;
-    public String couponCode;
+    private BigDecimal tax;
+    private String couponCode;
     @Column(precision = 19, scale = 0)
-    public BigDecimal discount;
+    private BigDecimal discount;
+
+    CartEntity(UUID id,UUID userId,BigDecimal subTotal,BigDecimal shippingCost,BigDecimal total,BigDecimal tax,String couponCode,BigDecimal discount){
+        this.id = id;
+        this.userId = userId;
+        this.subTotal = subTotal;
+        this.shippingCost = shippingCost;
+        this.total = total;
+        this.tax = tax;
+        this.couponCode = couponCode;
+        this.discount = discount;
+    }
+
+    void addItem(CartItemEntity item){
+        this.items.add(item);
+    }
+
+    void clearItem(){
+        this.items.clear();
+    }
+
+    void update(UUID id, UUID userId, BigDecimal subTotal, BigDecimal shippingCost, BigDecimal total, BigDecimal tax, String couponCode, BigDecimal discount) {
+        if(this.id == null){
+            this.id = id;
+        }
+        this.userId = userId;
+        this.subTotal = subTotal;
+        this.shippingCost = shippingCost;
+        this.total = total;
+        this.tax = tax;
+        this.couponCode = couponCode;
+        this.discount = discount;
+    }
+
 }

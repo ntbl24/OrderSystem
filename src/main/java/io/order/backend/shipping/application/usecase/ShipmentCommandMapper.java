@@ -7,37 +7,38 @@ final class ShipmentCommandMapper {
     private ShipmentCommandMapper() {}
 
     static Shipment toDomain(ShipmentCommand command) {
-        Shipment result = new Shipment();
-        result.setOrderId(command.orderId());
-        result.setUserId(command.userId());
-        result.setTrackingNumber(command.trackingNumber());
-        result.setCarrier(command.carrier());
-        result.setServiceType(command.serviceType());
-        result.setWeight(command.weight());
-        result.setWeightUnit(command.weightUnit());
-        result.setShippingCost(command.shippingCost());
-        result.setStatus(command.status());
-        result.setEstimatedDeliveryDate(command.estimatedDeliveryDate());
-        result.setActualDeliveryDate(command.actualDeliveryDate());
-        result.setOriginAddress(command.originAddress());
-        result.setOriginCity(command.originCity());
-        result.setOriginState(command.originState());
-        result.setOriginCountry(command.originCountry());
-        result.setOriginPostalCode(command.originPostalCode());
-        result.setDestinationAddress(command.destinationAddress());
-        result.setDestinationCity(command.destinationCity());
-        result.setDestinationState(command.destinationState());
-        result.setDestinationCountry(command.destinationCountry());
-        result.setDestinationPostalCode(command.destinationPostalCode());
-        result.setNotes(command.notes());
-        result.setLabelUrl(command.labelUrl());
-        result.setReturnLabelUrl(command.returnLabelUrl());
-        result.setSignatureRequired(command.signatureRequired());
-        result.setInsuranceRequired(command.insuranceRequired());
-        result.setDeclaredValue(command.declaredValue());
-        result.setCustomsInfo(command.customsInfo());
-        result.setCustomsValue(command.customsValue());
-        result.setCustomsCurrency(command.customsCurrency());
+        Shipment result = Shipment.create(
+            command.orderId(),
+            command.userId(),
+            command.trackingNumber(),
+            command.carrier(),
+            command.serviceType(),
+            command.weight(),
+            command.weightUnit(),
+            command.shippingCost(),
+            command.status(),
+            command.estimatedDeliveryDate(),
+            command.actualDeliveryDate(),
+            command.originAddress(),
+            command.originCity(),
+            command.originState(),
+            command.originCountry(),
+            command.originPostalCode(),
+            command.destinationAddress(),
+            command.destinationCity(),
+            command.destinationState(),
+            command.destinationCountry(),
+            command.destinationPostalCode(),
+            command.notes(),
+            command.labelUrl(),
+            command.returnLabelUrl(),
+            command.signatureRequired(),
+            command.insuranceRequired(),
+            command.declaredValue(),
+            command.customsInfo(),
+            command.customsValue(),
+            command.customsCurrency()
+        );
         return result;
     }
 }

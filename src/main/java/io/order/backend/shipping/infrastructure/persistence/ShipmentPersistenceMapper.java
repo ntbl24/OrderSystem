@@ -1,83 +1,78 @@
 package io.order.backend.shipping.infrastructure.persistence;
 
+import io.order.backend.order.domain.OrderId;
 import io.order.backend.shipping.domain.*;
+import io.order.backend.user.domain.UserId;
 
 public final class ShipmentPersistenceMapper {
     public static Shipment domain(ShipmentEntity e) {
-        Shipment d = new Shipment();
-        d.setId(e.id);
-        d.setCreatedAt(e.createdAt);
-        d.setUpdatedAt(e.updatedAt);
-        d.setDeleted(e.deleted);
-        d.setVersion(e.version);
-        d.setOrderId(e.orderId);
-        d.setUserId(e.userId);
-        d.setTrackingNumber(e.trackingNumber);
-        d.setCarrier(e.carrier);
-        d.setServiceType(e.serviceType);
-        d.setWeight(e.weight);
-        d.setWeightUnit(e.weightUnit);
-        d.setShippingCost(e.shippingCost);
-        d.setStatus(e.status);
-        d.setEstimatedDeliveryDate(e.estimatedDeliveryDate);
-        d.setActualDeliveryDate(e.actualDeliveryDate);
-        d.setOriginAddress(e.originAddress);
-        d.setOriginCity(e.originCity);
-        d.setOriginState(e.originState);
-        d.setOriginCountry(e.originCountry);
-        d.setOriginPostalCode(e.originPostalCode);
-        d.setDestinationAddress(e.destinationAddress);
-        d.setDestinationCity(e.destinationCity);
-        d.setDestinationState(e.destinationState);
-        d.setDestinationCountry(e.destinationCountry);
-        d.setDestinationPostalCode(e.destinationPostalCode);
-        d.setNotes(e.notes);
-        d.setLabelUrl(e.labelUrl);
-        d.setReturnLabelUrl(e.returnLabelUrl);
-        d.setSignatureRequired(e.signatureRequired);
-        d.setInsuranceRequired(e.insuranceRequired);
-        d.setDeclaredValue(e.declaredValue);
-        d.setCustomsInfo(e.customsInfo);
-        d.setCustomsValue(e.customsValue);
-        d.setCustomsCurrency(e.customsCurrency);
+        Shipment d = new Shipment(
+            ShipmentId.of(e.getId()),
+            OrderId.of(e.getOrderId()),
+            UserId.of(e.getUserId()),
+            TrackingNumber.of(e.getTrackingNumber()),
+            e.getCarrier(),
+            e.getServiceType(),
+            e.getWeight(),
+            e.getWeightUnit(),
+            e.getShippingCost(),
+            e.getStatus(),
+            e.getEstimatedDeliveryDate(),
+            e.getActualDeliveryDate(),
+            e.getOriginAddress(),
+            e.getOriginCity(),
+            e.getOriginState(),
+            e.getOriginCountry(),
+            e.getOriginPostalCode(),
+            e.getDestinationAddress(),
+            e.getDestinationCity(),
+            e.getDestinationState(),
+            e.getDestinationCountry(),
+            e.getDestinationPostalCode(),
+            e.getNotes(),
+            e.getLabelUrl(),
+            e.getReturnLabelUrl(),
+            e.isSignatureRequired(),
+            e.isInsuranceRequired(),
+            e.getDeclaredValue(),
+            e.getCustomsInfo(),
+            e.getCustomsValue(),
+            e.getCustomsCurrency()
+        );
         return d;
     }
 
     public static void copy(Shipment d, ShipmentEntity e) {
-        e.id = d.getId();
-        e.createdAt = d.getCreatedAt();
-        e.updatedAt = d.getUpdatedAt();
-        e.deleted = d.isDeleted();
-        e.version = d.getVersion();
-        e.orderId = d.getOrderId();
-        e.userId = d.getUserId();
-        e.trackingNumber = d.getTrackingNumber();
-        e.carrier = d.getCarrier();
-        e.serviceType = d.getServiceType();
-        e.weight = d.getWeight();
-        e.weightUnit = d.getWeightUnit();
-        e.shippingCost = d.getShippingCost();
-        e.status = d.getStatus();
-        e.estimatedDeliveryDate = d.getEstimatedDeliveryDate();
-        e.actualDeliveryDate = d.getActualDeliveryDate();
-        e.originAddress = d.getOriginAddress();
-        e.originCity = d.getOriginCity();
-        e.originState = d.getOriginState();
-        e.originCountry = d.getOriginCountry();
-        e.originPostalCode = d.getOriginPostalCode();
-        e.destinationAddress = d.getDestinationAddress();
-        e.destinationCity = d.getDestinationCity();
-        e.destinationState = d.getDestinationState();
-        e.destinationCountry = d.getDestinationCountry();
-        e.destinationPostalCode = d.getDestinationPostalCode();
-        e.notes = d.getNotes();
-        e.labelUrl = d.getLabelUrl();
-        e.returnLabelUrl = d.getReturnLabelUrl();
-        e.signatureRequired = d.isSignatureRequired();
-        e.insuranceRequired = d.isInsuranceRequired();
-        e.declaredValue = d.getDeclaredValue();
-        e.customsInfo = d.getCustomsInfo();
-        e.customsValue = d.getCustomsValue();
-        e.customsCurrency = d.getCustomsCurrency();
+        e.update(d.getId().value(),
+                d.getOrderId().value(),
+                d.getUserId().value(),
+                d.getTrackingNumber().value(),
+                d.getCarrier(),
+                d.getServiceType(),
+                d.getWeight(),
+                d.getWeightUnit(),
+                d.getShippingCost(),
+                d.getStatus(),
+                d.getEstimatedDeliveryDate(),
+                d.getActualDeliveryDate(),
+                d.getOriginAddress(),
+                d.getOriginCity(),
+                d.getOriginState(),
+                d.getOriginCountry(),
+                d.getOriginPostalCode(),
+                d.getDestinationAddress(),
+                d.getDestinationCity(),
+                d.getDestinationState(),
+                d.getDestinationCountry(),
+                d.getDestinationPostalCode(),
+                d.getNotes(),
+                d.getLabelUrl(),
+                d.getReturnLabelUrl(),
+                d.isSignatureRequired(),
+                d.isInsuranceRequired(),
+                d.getDeclaredValue(),
+                d.getCustomsInfo(),
+                d.getCustomsValue(),
+                d.getCustomsCurrency());
     }
 }

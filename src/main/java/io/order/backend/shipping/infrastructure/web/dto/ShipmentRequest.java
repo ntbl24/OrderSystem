@@ -1,6 +1,10 @@
 package io.order.backend.shipping.infrastructure.web.dto;
 
+import io.order.backend.order.domain.Order;
+import io.order.backend.order.domain.OrderId;
 import io.order.backend.shipping.application.port.in.ShipmentCommand;
+import io.order.backend.shipping.domain.TrackingNumber;
+import io.order.backend.user.domain.UserId;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -80,6 +84,18 @@ public class ShipmentRequest {
     private String customsValue;
     private String customsCurrency;
     public ShipmentCommand toCommand() {
-        return new ShipmentCommand(orderId, userId, trackingNumber, carrier, serviceType, weight, weightUnit, shippingCost, status, estimatedDeliveryDate, actualDeliveryDate, originAddress, originCity, originState, originCountry, originPostalCode, destinationAddress, destinationCity, destinationState, destinationCountry, destinationPostalCode, notes, labelUrl, returnLabelUrl, signatureRequired, insuranceRequired, declaredValue, customsInfo, customsValue, customsCurrency);
+        return new ShipmentCommand(OrderId.of(orderId), UserId.of(userId), 
+        TrackingNumber.of(trackingNumber), 
+        carrier, serviceType, weight, 
+        weightUnit, shippingCost, status, 
+        estimatedDeliveryDate, actualDeliveryDate, 
+        originAddress, originCity, originState, 
+        originCountry, originPostalCode, 
+        destinationAddress, destinationCity, 
+        destinationState, destinationCountry, 
+        destinationPostalCode, notes, labelUrl, 
+        returnLabelUrl, signatureRequired, insuranceRequired, 
+        declaredValue, customsInfo, customsValue, 
+        customsCurrency);
     }
 }

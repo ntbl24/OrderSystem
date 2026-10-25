@@ -31,12 +31,10 @@ public class JpaCartAdapter implements CartRepository {
     }
 
     public Cart save(Cart cart) {
-        CartEntity entity = repository.findById(cart.getId().value()).orElseGet(CartEntity::new);
-        if (!Objects.equals(entity.version, cart.getVersion()))
+        CartEntity entity = repository.findById(cart.getId().value())
+            .orElseGet(()-> new CartEntity(cart.getId().value(),cart.getUserId().value(),cart.getSubTotal(),cart.getShippingCost(),cart.getTotal(),cart.getTax(),cart.getCouponCode(),cart.getDiscount()));
+        if (!Objects.equals(entity.getVersion(), cart.getVersion()))
             throw new ObjectOptimisticLockingFailureException(CartEntity.class, cart.getId().value());
-        if (entity.createdAt == null)
-            entity.createdAt = LocalDateTime.now();
-        entity.updatedAt = LocalDateTime.now();
         CartPersistenceMapper.copy(cart, entity);
         return CartPersistenceMapper.domain(repository.saveAndFlush(entity));
     }

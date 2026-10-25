@@ -4,6 +4,9 @@ import io.order.backend.product.application.port.in.ProductCatalogQuery;
 import io.order.backend.product.application.port.out.ProductRepository;
 import io.order.backend.product.domain.ProductId;
 
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,12 +23,13 @@ public class ProductCatalogService implements ProductCatalogQuery {
         return products.findById(id).map(product -> new Snapshot(product.getId(), product.getSellerId(),
                 product.getTitle(), product.getSku(), product.getPrice(), product.isDeleted()));
     }
+
     @Override
-    public java.util.Map<ProductId, Snapshot> findByIds(java.util.Collection<ProductId> ids) {
-        java.util.Map<ProductId, Snapshot> result = new java.util.LinkedHashMap<>();
+    public Map<ProductId, Snapshot> findByIds(Collection<ProductId> ids) {
+        Map<ProductId, Snapshot> result = new LinkedHashMap<>();
         products.findAllById(ids).forEach(product -> result.put(product.getId(),
                 new Snapshot(product.getId(), product.getSellerId(), product.getTitle(), product.getSku(),
                         product.getPrice(), product.isDeleted())));
-        return java.util.Map.copyOf(result);
+        return Map.copyOf(result);
     }
 }

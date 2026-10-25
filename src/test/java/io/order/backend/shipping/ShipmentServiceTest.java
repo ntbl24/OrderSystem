@@ -2,7 +2,7 @@ package io.order.backend.shipping;
 
 import io.order.backend.common.exception.ResourceNotFoundException;
 import io.order.backend.shipping.application.port.out.ShipmentRepository;
-import io.order.backend.shipping.application.usecase.ShipmentService;
+import io.order.backend.shipping.application.usecase.ShipmentCommandService;
 import io.order.backend.shipping.domain.Shipment;
 import io.order.backend.shipping.infrastructure.web.dto.ShipmentRequest;
 import io.order.backend.shipping.infrastructure.web.dto.ShipmentResponse;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ShipmentServiceTest {
     @Mock ShipmentRepository shipments;
-    @InjectMocks ShipmentService service;
+    @InjectMocks ShipmentCommandService service;
 
     @Test
     void createShipment_whenClientSuppliesIdAndStatus_shouldGenerateIdentityAndForceCreatedStatus() {
