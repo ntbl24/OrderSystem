@@ -4,7 +4,6 @@ import io.order.backend.cart.application.port.out.CartRepository;
 import io.order.backend.cart.domain.Cart;
 import io.order.backend.cart.domain.CartId;
 import io.order.backend.user.domain.UserId;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

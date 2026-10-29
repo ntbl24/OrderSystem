@@ -1,7 +1,6 @@
 package io.order.backend.product.infrastructure.web.dto;
 
-import io.order.backend.product.application.port.in.CreateProductCommand;
-import io.order.backend.product.application.port.in.UpdateProductCommand;
+import io.order.backend.product.application.port.in.ProductCommand;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -35,11 +34,7 @@ public class ProductRequest {
     @NotBlank(message = "Seller ID is required")
     private String sellerId;
 
-    public CreateProductCommand toCreateCommand() {
-        return new CreateProductCommand(title, category, description, price, stock, sku, sellerId);
-    }
-
-    public UpdateProductCommand toUpdateCommand() {
-        return new UpdateProductCommand(title, category, description, price, stock, sku, sellerId);
+    public ProductCommand toCommand() {
+        return new ProductCommand(title, category, description, price, stock, sku, sellerId);
     }
 }

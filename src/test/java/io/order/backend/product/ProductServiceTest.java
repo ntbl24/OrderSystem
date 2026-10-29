@@ -1,6 +1,6 @@
 package io.order.backend.product;
 
-import io.order.backend.product.application.port.in.CreateProductCommand;
+import io.order.backend.product.application.port.in.ProductCommand;
 import io.order.backend.product.application.port.in.ProductCommand;
 import io.order.backend.product.application.port.in.UpdateProductCommand;
 import io.order.backend.product.application.port.out.ProductRepository;

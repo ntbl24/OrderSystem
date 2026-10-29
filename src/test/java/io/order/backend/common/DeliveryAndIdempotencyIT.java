@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import io.order.backend.common.exception.ConflictException;
+import io.order.backend.common.application.port.IdempotencyPort;
+import io.order.backend.common.application.port.OutboxPort;
 import io.order.backend.common.infrastructure.idempotency.IdempotencyService;
 import io.order.backend.common.infrastructure.messaging.OutboxDispatcher;
 import io.order.backend.common.application.port.OutboxHandler;
@@ -31,8 +33,8 @@ import tools.jackson.databind.json.JsonMapper;
 @SpringJUnitConfig(DeliveryAndIdempotencyIT.Config.class)
 class DeliveryAndIdempotencyIT {
     @Autowired JdbcTemplate jdbc;
-    @Autowired IdempotencyService idempotency;
-    @Autowired OutboxService outbox;
+    @Autowired IdempotencyPort idempotency;
+    @Autowired OutboxPort outbox;
     @Autowired OutboxDispatcher dispatcher;
     @Autowired PlatformTransactionManager manager;
 
@@ -75,6 +77,30 @@ class DeliveryAndIdempotencyIT {
         idempotency.execute("buyer-a", "checkout", "key", "same", Result.class, () -> new Result("a"));
         assertThat(idempotency.execute("buyer-b", "checkout", "key", "same", Result.class,
             () -> new Result("b"))).isEqualTo(new Result("b"));
+    }
+
+    @Test
+    void execute_differentOperation_shouldNotReplayAnotherOperationsResult() {
+        idempotency.execute("buyer", "checkout", "key", "same", Result.class, () -> new Result("checkout"));
+        assertThat(idempotency.execute("buyer", "refund", "key", "same", Result.class,
+            () -> new Result("refund"))).isEqualTo(new Result("refund"));
+    }
+
+    @Test
+    void execute_oversizedResponse_shouldRollbackClaimAndBusinessMutation() {
+        assertThatThrownBy(() -> idempotency.execute("buyer", "checkout", "key", "same", Result.class, () -> {
+            jdbc.update("INSERT INTO test_effects(id) VALUES ('oversized')");
+            return new Result("é".repeat(131073));
+        })).isInstanceOf(IllegalArgumentException.class);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM idempotency_records", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM test_effects", Integer.class)).isZero();
+    }
+
+    @Test
+    void enqueue_withoutBusinessTransaction_shouldReject() {
+        assertThatThrownBy(() -> outbox.enqueue("TEST", "order", "payload"))
+            .isInstanceOf(org.springframework.transaction.IllegalTransactionStateException.class);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_events", Integer.class)).isZero();
     }
 
     @Test

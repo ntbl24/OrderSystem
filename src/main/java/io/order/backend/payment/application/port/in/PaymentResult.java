@@ -7,7 +7,7 @@ import java.time.Instant;
 public record PaymentResult(String id, String orderId, BigDecimal amount, String currency,
         String status, String refundStatus, Instant expiresAt, String paymentUrl) {
     public static PaymentResult from(Payment p, String url) {
-        return new PaymentResult(p.id(), p.orderId(), p.amount(), p.currency(), p.status().name(),
-                p.refundStatus().name(), p.expiresAt(), url);
+        return new PaymentResult(p.getId(), p.getOrderId(), p.getAmount(), p.getCurrency(), p.getStatus().name(),
+                p.getRefundStatus().name(), p.getExpiresAt(), url);
     }
 }

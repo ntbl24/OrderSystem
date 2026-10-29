@@ -67,7 +67,7 @@ class PaymentValueObjectTest {
         UserId buyerId = UserId.generate();
         TransactionRef ref = TransactionRef.of("TXN-TEST");
 
-        Payment payment = new Payment(
+        Payment payment = Payment.reconstitute(
                 paymentId.value().toString(),
                 orderId.value().toString(),
                 buyerId.value().toString(),
@@ -85,9 +85,9 @@ class PaymentValueObjectTest {
                 null
         );
 
-        assertThat(payment.paymentId()).isEqualTo(paymentId);
-        assertThat(payment.orderIdentifier()).isEqualTo(orderId);
-        assertThat(payment.buyerIdentifier()).isEqualTo(buyerId);
-        assertThat(payment.transactionRefVo()).isEqualTo(ref);
+        assertThat(payment.getPaymentId()).isEqualTo(paymentId);
+        assertThat(payment.getOrderIdentifier()).isEqualTo(orderId);
+        assertThat(payment.getBuyerIdentifier()).isEqualTo(buyerId);
+        assertThat(payment.getTransactionRefVo()).isEqualTo(ref);
     }
 }

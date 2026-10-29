@@ -1,6 +1,7 @@
 package io.order.backend.order.application.usecase;
 
 import io.order.backend.order.application.port.out.OrderRepository;
+import io.order.backend.order.domain.OrderId;
 import io.order.backend.order.application.port.out.InventoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +15,7 @@ public class OrderExpiryService implements io.order.backend.order.application.po
     private final InventoryPort inventory;
 
     @Transactional
-    public void expire(String id) {
+    public void expire(OrderId id) {
         var order = orders.lockById(id).orElseThrow();
         if (order.expire(Instant.now())) {
             InventorySettlement.settle(order, inventory, "RELEASED");

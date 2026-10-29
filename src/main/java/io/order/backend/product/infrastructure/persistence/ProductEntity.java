@@ -54,11 +54,8 @@ public class ProductEntity {
         this.reserved = reserved;
     }
 
-    public void update(UUID id, String title, String category, String description, BigDecimal price, int stock,
+    public void update(String title, String category, String description, BigDecimal price, int stock,
             String sku, String sellerId, int reserved) {
-        if(id != null){
-            this.id = id;
-        }
         this.title = title;
         this.category = category;
         this.description = description;

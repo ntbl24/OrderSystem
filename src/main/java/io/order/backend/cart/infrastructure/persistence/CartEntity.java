@@ -66,10 +66,7 @@ public class CartEntity {
         this.items.clear();
     }
 
-    void update(UUID id, UUID userId, BigDecimal subTotal, BigDecimal shippingCost, BigDecimal total, BigDecimal tax, String couponCode, BigDecimal discount) {
-        if(this.id == null){
-            this.id = id;
-        }
+    void update(UUID userId, BigDecimal subTotal, BigDecimal shippingCost, BigDecimal total, BigDecimal tax, String couponCode, BigDecimal discount) {
         this.userId = userId;
         this.subTotal = subTotal;
         this.shippingCost = shippingCost;

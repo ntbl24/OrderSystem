@@ -7,6 +7,8 @@ import io.order.backend.payment.domain.Payment;
 import okhttp3.*;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
+
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -23,10 +25,12 @@ public class VnPayProvider implements PaymentGateway {
     private final VNPayConfig config;
     private final OkHttpClient http;
     private final JsonMapper json;
+    private static final long MAX_RESPONSE_SIZE = 32 * 1024;
 
     public VnPayProvider(VNPayConfig config, OkHttpClient http, JsonMapper json) {
         this.config = config;
-        this.http = http.newBuilder().callTimeout(java.time.Duration.ofSeconds(30)).retryOnConnectionFailure(false)
+        this.http = http.newBuilder()
+                .callTimeout(java.time.Duration.ofSeconds(30)).retryOnConnectionFailure(false)
                 .build();
         this.json = json;
     }
@@ -37,15 +41,15 @@ public class VnPayProvider implements PaymentGateway {
         f.put("vnp_Command", "pay");
         f.put("vnp_TmnCode", config.tmnCode());
         f.put("vnp_Amount", Long.toString(p.providerAmount()));
-        f.put("vnp_CurrCode", p.currency());
-        f.put("vnp_TxnRef", p.transactionRef());
-        f.put("vnp_OrderInfo", "Payment " + p.transactionRef());
+        f.put("vnp_CurrCode", p.getCurrency());
+        f.put("vnp_TxnRef", p.getTransactionRef().toString());
+        f.put("vnp_OrderInfo", "Payment " + p.getTransactionRef().value());
         f.put("vnp_OrderType", "other");
         f.put("vnp_Locale", "vn");
         f.put("vnp_ReturnUrl", config.returnUrl());
         f.put("vnp_IpAddr", ip);
-        f.put("vnp_CreateDate", DATE.format(p.createdAt()));
-        f.put("vnp_ExpireDate", DATE.format(p.expiresAt()));
+        f.put("vnp_CreateDate", DATE.format(p.getCreatedAt()));
+        f.put("vnp_ExpireDate", DATE.format(p.getExpiresAt()));
         String canonical = canonical(f);
         return config.payUrl() + "?" + canonical + "&vnp_SecureHash=" + sign(canonical);
     }
@@ -59,12 +63,12 @@ public class VnPayProvider implements PaymentGateway {
             return new PaymentNotification(false, false, null, null, null, false, null);
         boolean success = "00".equals(fields.get("vnp_ResponseCode"))
                 && "00".equals(fields.get("vnp_TransactionStatus"));
-        java.math.BigDecimal amount = null;
+        BigDecimal amount = null;
         String rawAmount = fields.getOrDefault("vnp_Amount", "");
         try {
             long units = Long.parseLong(rawAmount);
             if (units > 0 && Long.toString(units).equals(rawAmount))
-                amount = java.math.BigDecimal.valueOf(units, 2);
+                amount = BigDecimal.valueOf(units, 2);
         } catch (NumberFormatException ignored) {
             // Malformed amounts are rejected as payment data, not signature failures.
         }
@@ -79,7 +83,7 @@ public class VnPayProvider implements PaymentGateway {
 
     public Observation query(Payment p) {
         var f = base("querydr", UUID.randomUUID().toString().replace("-", ""), p, Instant.now());
-        f.put("vnp_OrderInfo", "Query " + p.transactionRef());
+        f.put("vnp_OrderInfo", "Query " + p.getTransactionRef().toString());
         f.put("vnp_SecureHash", sign(join(f, "RequestId", "Version", "Command", "TmnCode", "TxnRef", "TransactionDate",
                 "CreateDate", "IpAddr", "OrderInfo")));
         var r = post(f);
@@ -100,12 +104,12 @@ public class VnPayProvider implements PaymentGateway {
     }
 
     public RefundOutcome refund(Payment p) {
-        var f = base("refund", p.refundRequestId(), p, p.refundCreatedAt());
+        var f = base("refund", p.getRefundRequestId(), p, p.getRefundCreatedAt());
         f.put("vnp_TransactionType", "02");
         f.put("vnp_Amount", Long.toString(p.providerAmount()));
-        f.put("vnp_TransactionNo", p.providerTransactionNo());
-        f.put("vnp_CreateBy", p.refundActor());
-        f.put("vnp_OrderInfo", p.refundReason());
+        f.put("vnp_TransactionNo", p.getProviderTransactionNo());
+        f.put("vnp_CreateBy", p.getRefundActor());
+        f.put("vnp_OrderInfo", p.getRefundReason());
         f.put("vnp_SecureHash", sign(join(f, "RequestId", "Version", "Command", "TmnCode", "TransactionType", "TxnRef",
                 "Amount", "TransactionNo", "TransactionDate", "CreateBy", "CreateDate", "IpAddr", "OrderInfo")));
         var r = post(f);
@@ -122,8 +126,8 @@ public class VnPayProvider implements PaymentGateway {
         f.put("vnp_Version", "2.1.0");
         f.put("vnp_Command", command);
         f.put("vnp_TmnCode", config.tmnCode());
-        f.put("vnp_TxnRef", p.transactionRef());
-        f.put("vnp_TransactionDate", DATE.format(p.createdAt()));
+        f.put("vnp_TxnRef", p.getTransactionRef().toString());
+        f.put("vnp_TransactionDate", DATE.format(p.getCreatedAt()));
         f.put("vnp_CreateDate", DATE.format(date));
         f.put("vnp_IpAddr", config.serverIp());
         return f;
@@ -136,7 +140,7 @@ public class VnPayProvider implements PaymentGateway {
             data += "|" + r.getOrDefault("vnp_PromotionCode", "") + "|" + r.getOrDefault("vnp_PromotionAmount", "");
         return equalSignature(r.get("vnp_SecureHash"), sign(data)) && "00".equals(r.get("vnp_ResponseCode"))
                 && command.equals(r.get("vnp_Command")) && config.tmnCode().equals(r.get("vnp_TmnCode"))
-                && p.transactionRef().equals(r.get("vnp_TxnRef"))
+                && p.getTransactionRef().equals(r.get("vnp_TxnRef"))
                 && Long.toString(p.providerAmount()).equals(r.get("vnp_Amount"));
     }
 
@@ -148,11 +152,21 @@ public class VnPayProvider implements PaymentGateway {
                 if (!response.isSuccessful() || response.body() == null)
                     return Map.of();
                 var source = response.body().source();
-                source.request(32769);
-                if (source.buffer().size() > 32768)
+                var buffer = new okio.Buffer();
+                while (buffer.size() <= MAX_RESPONSE_SIZE
+                        && source.read(buffer, MAX_RESPONSE_SIZE + 1 - buffer.size()) != -1) {
+                    if (buffer.size() > MAX_RESPONSE_SIZE) {
+                        return Map.of();
+                    }
+                }
+                if (buffer.size() > MAX_RESPONSE_SIZE) {
                     return Map.of();
-                String body = source.readUtf8();
+                }
+                String body = buffer.readUtf8();
                 var node = json.readTree(body);
+                if (node == null || !node.isObject()) {
+                    return Map.of();
+                }
                 var result = new HashMap<String, String>();
                 node.properties().forEach(e -> result.put(e.getKey(), e.getValue().asString()));
                 return result;

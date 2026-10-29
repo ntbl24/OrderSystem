@@ -1,7 +1,6 @@
 package io.order.backend.product.domain;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Product {
@@ -90,8 +89,7 @@ public class Product {
         stock = Math.addExact(stock, quantity);
     }
 
-    public void replaceDetails(String title, String category, String description, BigDecimal price,
-                               int stock, String sku, String sellerId) {
+    public void replaceDetails(ProductDetails details) {
         if (reserved > 0 && !Objects.equals(this.sellerId, sellerId)) {
             throw new IllegalStateException("Cannot change seller with reserved stock");
         }
@@ -102,13 +100,13 @@ public class Product {
         replacement.reserved = reserved;
         replacement.validate();
 
-        this.title = title;
-        this.category = category;
-        this.description = description;
-        this.price = price;
-        this.stock = stock;
-        this.sku = sku;
-        this.sellerId = sellerId;
+        this.title = details.title();
+        this.category = details.category();
+        this.description = details.description();
+        this.price = details.price();
+        this.stock = details.stock();
+        this.sku = details.sku();
+        this.sellerId = details.sellerId();
     }
 
     public void updateStock(int quantity) {

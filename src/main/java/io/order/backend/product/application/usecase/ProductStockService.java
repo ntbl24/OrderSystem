@@ -28,7 +28,7 @@ public class ProductStockService implements ProductStockUseCase {
             product.validate();
             product.reserve(quantities.get(id));
             products.save(product);
-            result.put(id, new Snapshot(product.getId().value().toString(), product.getSellerId(), product.getTitle(),
+            result.put(id, new Snapshot(product.getId(), product.getSellerId(), product.getTitle(),
                     product.getSku(), product.getPrice(), product.isDeleted()));
         });
         return Map.copyOf(result);
@@ -37,9 +37,9 @@ public class ProductStockService implements ProductStockUseCase {
     @Override
     @Transactional
     public void settle(List<Line> lines, String target) {
-        Map<String, Product> locked = lockProducts(lines.stream().map(Line::productId).toList());
+        Map<String, Product> locked = lockProducts(lines.stream().map(l -> l.productId().toString()).toList());
         for (Line line : lines) {
-            Product product = locked.get(line.productId());
+            Product product = locked.get(line.productId().toString());
             switch (target) {
                 case "CONSUMED" -> product.consume(line.quantity());
                 case "RELEASED" -> product.release(line.quantity());

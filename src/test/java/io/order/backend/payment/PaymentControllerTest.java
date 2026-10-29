@@ -1,7 +1,7 @@
 package io.order.backend.payment;
 
 import io.order.backend.payment.infrastructure.web.controller.PaymentController;
-import io.order.backend.payment.application.port.in.PaymentUseCase;
+import io.order.backend.payment.application.port.in.*;
 import io.order.backend.payment.application.port.in.PaymentResult;
 import java.math.BigDecimal;
 import io.order.backend.payment.infrastructure.provider.VnPayCallbacks;
@@ -22,12 +22,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 class PaymentControllerTest {
-    @Mock PaymentUseCase payments;
+    @Mock CreatePaymentUsecase creates;
+    @Mock PaymentQueryUseCase payments;
+    @Mock RefundPaymentUseCase refunds;
     @Mock VnPayCallbacks callbacks;
     MockMvc mvc;
 
     @BeforeEach void setup() {
-        mvc = MockMvcBuilders.standaloneSetup(new PaymentController(payments),
+        mvc = MockMvcBuilders.standaloneSetup(new PaymentController(creates, payments, refunds),
                 new VnPayCallbackController(callbacks)).build();
     }
 
@@ -36,7 +38,7 @@ class PaymentControllerTest {
     }
 
     @Test void create_allAliases_preserveCreatedAndUseCaseArguments() throws Exception {
-        when(payments.create(anyString(), anyString(), anyString())).thenReturn(result());
+        when(creates.create(any(CreatePaymentCommand.class))).thenReturn(result());
         for (String path : List.of("", "/attempts", "/process")) {
             mvc.perform(post("/api/v1/payments" + path).header("Idempotency-Key", "key")
                     .contentType(MediaType.APPLICATION_JSON).content("{\"orderId\":\"order\"}"))
@@ -49,17 +51,17 @@ class PaymentControllerTest {
                     .andExpect(jsonPath("$.data.refundStatus").value("NONE"))
                     .andExpect(jsonPath("$.data.paymentUrl").value("https://provider.test/pay"));
         }
-        verify(payments, times(3)).create(eq("order"), eq("key"), anyString());
+        verify(creates, times(3)).create(argThat(c -> c.orderId().equals(io.order.backend.order.domain.OrderId.of("order")) && c.key().equals("key")));
     }
 
     @Test void refunds_bothAliases_preserveAccepted() throws Exception {
-        when(payments.refund("payment", "key", "requested")).thenReturn(result());
+        when(refunds.refund("payment", "key", "requested")).thenReturn(result());
         for (String suffix : List.of("/refunds", "/refund")) {
             mvc.perform(post("/api/v1/payments/payment" + suffix).header("Idempotency-Key", "key")
                     .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"requested\"}"))
                     .andExpect(status().isAccepted());
         }
-        verify(payments, times(2)).refund("payment", "key", "requested");
+        verify(refunds, times(2)).refund("payment", "key", "requested");
     }
 
     @Test void get_mapsApplicationResultToExistingJson() throws Exception {
@@ -100,7 +102,7 @@ class PaymentControllerTest {
     }
 
     @Test void return_bothAliases_delegateWithoutSettlement() throws Exception {
-        when(callbacks.returnView(anyMap())).thenReturn(new PaymentUseCase.ReturnView(false, "INVALID", null));
+        when(callbacks.returnView(anyMap())).thenReturn(new PaymentCallbackUseCase.ReturnView(false, "INVALID", null));
         for (String path : List.of("/vnpay/return", "/callback/vnpay")) {
             mvc.perform(get("/api/v1/payments" + path)).andExpect(status().isOk());
         }

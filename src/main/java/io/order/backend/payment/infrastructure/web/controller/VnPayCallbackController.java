@@ -1,7 +1,7 @@
 package io.order.backend.payment.infrastructure.web.controller;
 
 import io.order.backend.common.response.ApiResponse;
-import io.order.backend.payment.application.port.in.PaymentUseCase;
+import io.order.backend.payment.application.port.in.PaymentCallbackUseCase;
 import io.order.backend.payment.infrastructure.provider.VnPayCallbacks;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,7 +24,7 @@ public class VnPayCallbackController {
     }
 
     @GetMapping({ "/vnpay/return", "/callback/vnpay" })
-    public ApiResponse<PaymentUseCase.ReturnView> returnView(@RequestParam MultiValueMap<String, String> params) {
+    public ApiResponse<PaymentCallbackUseCase.ReturnView> returnView(@RequestParam MultiValueMap<String, String> params) {
         return ApiResponse.success(callbacks.returnView(params));
     }
 }

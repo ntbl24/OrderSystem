@@ -3,17 +3,21 @@ package io.order.backend.order.application.port.in;
 import java.math.BigDecimal;
 import java.util.List;
 
-public interface PlaceOrderUseCase {
-    OrderResult placeOrder(CreateOrder command);
+import io.order.backend.order.domain.Order;
+import io.order.backend.product.domain.ProductId;
+import io.order.backend.user.domain.UserId;
 
-    record CreateOrder(String ownerId, String sellerId, List<Line> lines, BigDecimal subtotal,
+public interface PlaceOrderUseCase {
+    Order placeOrder(CreateOrder command);
+
+    record CreateOrder(UserId ownerId, String sellerId, List<Line> lines, BigDecimal subtotal,
             String shippingAddress, String notes) {
         public CreateOrder {
             lines = List.copyOf(lines);
         }
     }
 
-    record Line(String productId, String productName, String sku, int quantity,
+    record Line(ProductId productId, String productName, String sku, int quantity,
             BigDecimal unitPrice, BigDecimal subtotal) {
     }
 }

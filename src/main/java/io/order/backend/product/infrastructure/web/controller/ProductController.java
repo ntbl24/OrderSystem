@@ -38,7 +38,7 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@Valid @RequestBody ProductRequest request) {
-        Product createdProduct = createProductUseCase.createProduct(request.toCreateCommand());
+        Product createdProduct = createProductUseCase.createProduct(request.toCommand());
         return ResponseEntity.ok(ApiResponse.success(ProductResponse.from(createdProduct)));
     }
 
@@ -46,7 +46,7 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(@PathVariable String id,
                                                                       @Valid @RequestBody ProductRequest request) {
-        Product updatedProduct = updateProductUseCase.updateProduct(ProductId.of(id), request.toUpdateCommand());
+        Product updatedProduct = updateProductUseCase.updateProduct(ProductId.of(id), request.toCommand());
         return ResponseEntity.ok(ApiResponse.success(ProductResponse.from(updatedProduct)));
     }
 

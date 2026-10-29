@@ -11,12 +11,19 @@ Modular monolith theo business module: `product`, `cart`, `inventory`, `checkout
 - `application.port.in`: use case/query công khai của từng module; controller và local adapter gọi interface thay vì service cụ thể.
 - `application.port.out`: repository và dependency do module tiêu thụ định nghĩa; implementation nằm trong `infrastructure`. Spring Data/JPA không đi vào application/domain; pagination Spring Data hiện chỉ được dùng ở application contract, không ở domain.
 - Module không truy cập domain, repository hoặc mapper của module khác. Local adapter chuyển đổi snapshot/command bất biến giữa các public input port. Checkout điều phối reservation qua inventory và tạo đơn qua order; product sở hữu thao tác stock, order sở hữu vòng đời reservation.
+- Payment tách input port/service cho create, query, refund, callback và worker. Controller/provider/scheduler/messaging gọi input ports; worker ghi observation qua port, không phụ thuộc service cụ thể. `JpaPaymentAdapter` triển khai output port và dùng `PaymentPersistenceMapper` để ánh xạ domain/entity; `JpaPaymentRepository` là Spring Data repository cho CRUD và truy vấn. Custom repository chỉ dùng `EntityManager` cho refresh kèm khóa ghi để tránh snapshot cũ; entity quản lý lease, application/aggregate quyết định transition refund và hết lượt đối soát. API ID và schema giữ nguyên.
 - Payment application nhận notification có kiểu và trả kết quả trung lập; adapter VNPay xử lý chữ ký, trường giao thức và acknowledgment. Idempotency/outbox được gọi qua shared ports, implementation JDBC vẫn dùng database local.
 - Các module dùng cấu trúc của cart: `application/port/in`, `application/port/out`, `application/usecase`, `domain`, `infrastructure/persistence`, `infrastructure/web/controller` và `infrastructure/web/dto`. Request chuyển thành command; response chuyển từ domain/application result tại web adapter. Application không phụ thuộc DTO hay mapper HTTP.
 - Giữ tương thích route, JSON, status, ID và schema hiện có; việc di chuyển class/package không phải migration API hay database. Khi tách microservice cần version hóa contract, thay local adapter và thiết kế saga/compensation thay vì chỉ đổi transport.
 - Idempotency JDBC và outbox dispatcher nằm trong `common/infrastructure`; public ports và hợp đồng consumer nằm trong `common/application/port`. Inventory là use case điều phối stock qua port, không tạo thêm aggregate khi chưa có invariant riêng.
 
-Kiểm thử tập trung chức năng, domain invariants và các luồng nghiệp vụ; không bổ sung test kiến trúc. Cart chủ động dùng chung value object `ProductId` với public catalog port; ngoại lệ này chỉ áp dụng cho ID, không cho aggregate/repository của product.
+Kiểm thử tập trung chức năng, domain invariants và các luồng nghiệp vụ; payment/common có thêm kiểm thử ranh giới kiến trúc. Cart chủ động dùng chung value object `ProductId` với public catalog port; payment dùng `OrderId`/`UserId` trong hợp đồng port hiện có. Các ngoại lệ này chỉ áp dụng cho ID, không cho aggregate/repository của module khác.
+
+### Quy tắc domain và entity
+
+- Không dùng setter để sửa domain hoặc JPA entity. Domain cung cấp hành vi có tên nghiệp vụ và bảo vệ invariant; entity đóng gói trạng thái persistence, mapping và lease qua các method chuyên biệt, không cho adapter ghi trực tiếp field.
+- Payment là class aggregate có private state, getter và business method thay đổi trạng thái có kiểm tra invariant (không có setter); tạo attempt qua `Payment.create`, khôi phục snapshot qua `Payment.reconstitute`. Payment tạo attempt, giới hạn thời hạn theo đơn hàng và tối đa 15 phút; refund phải qua các transition hợp lệ, kiểm tra lý do ở domain. `CreatePaymentService` điều phối port, idempotency chỉ hash order ID (không hash key/IP), giữ replay khi đổi IP.
+- Common giữ idempotency scope và quy tắc complete/replay trong domain thuần Java; JDBC, JSON, HTTP và cơ chế outbox/inbox nằm tại adapter. Không đưa annotation HTTP/Spring vào domain exception.
 
 ### Module cart
 

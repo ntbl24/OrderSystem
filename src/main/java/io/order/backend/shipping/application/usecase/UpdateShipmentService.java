@@ -5,6 +5,7 @@ import io.order.backend.shipping.application.port.in.ShipmentCommand;
 import io.order.backend.shipping.application.port.in.UpdateShipmentUseCase;
 import io.order.backend.shipping.application.port.out.ShipmentRepository;
 import io.order.backend.shipping.domain.Shipment;
+import io.order.backend.shipping.domain.ShipmentDetails;
 import io.order.backend.shipping.domain.ShipmentId;
 import io.order.backend.shipping.domain.TrackingNumber;
 import lombok.RequiredArgsConstructor;
@@ -25,38 +26,10 @@ public class UpdateShipmentService implements UpdateShipmentUseCase {
         Shipment existingShipment = shipmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Shipment not found with id: " + id));
 
-        existingShipment.update(
-            command.orderId(),
-            command.userId(),
-            command.trackingNumber(),
-            command.carrier(),
-            command.serviceType(),
-            command.weight(),
-            command.weightUnit(),
-            command.shippingCost(),
-            command.status(),
-            command.estimatedDeliveryDate(),
-            command.actualDeliveryDate(),
-            command.originAddress(),
-            command.originCity(),
-            command.originState(),
-            command.originCountry(),
-            command.originPostalCode(),
-            command.destinationAddress(),
-            command.destinationCity(),
-            command.destinationState(),
-            command.destinationCountry(),
-            command.destinationPostalCode(),
-            command.notes(),
-            command.labelUrl(),
-            command.returnLabelUrl(),
-            command.signatureRequired(),
-            command.insuranceRequired(),
-            command.declaredValue(),
-            command.customsInfo(),
-            command.customsValue(),
-            command.customsCurrency()
-        );
+        ShipmentDetails details = ShipmentCommandMapper.toDetails(command);
+
+        existingShipment.updateDetails(details);
+
         return shipmentRepository.save(existingShipment);
     }
 

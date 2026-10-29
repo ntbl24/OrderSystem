@@ -4,89 +4,114 @@ import io.order.backend.payment.domain.Payment;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
+import org.hibernate.annotations.CreationTimestamp;
+
+@lombok.Getter
 @Entity
 @Table(name = "payment_attempts")
 public class PaymentJpaEntity {
     @Id
-    String id;
+    private UUID id;
     @Version
-    Long version;
+    private Long version;
     @Column(name = "order_id", nullable = false)
-    String orderId;
+    private UUID orderId;
     @Column(name = "buyer_id", nullable = false)
-    String buyerId;
+    private UUID buyerId;
     @Column(nullable = false, precision = 19, scale = 0)
-    BigDecimal amount;
+    private BigDecimal amount;
     @Column(nullable = false, length = 3)
-    String currency;
+    private String currency;
     @Column(name = "transaction_ref", nullable = false, unique = true, length = 32)
-    String transactionRef;
+    private String transactionRef;
     @Column(name = "created_at", nullable = false)
-    Instant createdAt;
+    @CreationTimestamp
+    private Instant createdAt;
     @Column(name = "expires_at", nullable = false)
-    Instant expiresAt;
+    private Instant expiresAt;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 24)
-    Payment.Status status;
+    private Payment.Status status;
     @Column(name = "provider_transaction_no")
-    String providerTransactionNo;
+    private String providerTransactionNo;
     @Enumerated(EnumType.STRING)
     @Column(name = "refund_status", nullable = false, length = 24)
-    Payment.RefundStatus refundStatus;
+    private Payment.RefundStatus refundStatus;
     @Column(name = "refund_request_id", unique = true, length = 32)
-    String refundRequestId;
+    private String refundRequestId;
     @Column(name = "refund_actor")
-    String refundActor;
+    private String refundActor;
     @Column(name = "refund_reason", length = 255)
-    String refundReason;
+    private String refundReason;
     @Column(name = "refund_created_at")
-    Instant refundCreatedAt;
+    private Instant refundCreatedAt;
     @Column(name = "next_attempt", nullable = false)
-    Instant nextAttempt;
+    private Instant nextAttempt;
     @Column(name = "lease_until")
-    Instant leaseUntil;
+    private Instant leaseUntil;
     @Column(name = "lease_token")
-    String leaseToken;
+    private String leaseToken;
     @Column(nullable = false)
-    int attempts;
+    private int attempts;
     @Column(name = "last_outcome", length = 64)
-    String lastOutcome;
+    private String lastOutcome;
 
     protected PaymentJpaEntity() {
     }
 
-    static PaymentJpaEntity create(Payment p) {
-        var e = new PaymentJpaEntity();
-        e.id = p.id();
-        e.nextAttempt = p.createdAt().plusSeconds(60);
-        e.apply(p);
-        return e;
+    static PaymentJpaEntity create(UUID id, Instant createdAt) {
+        var entity = new PaymentJpaEntity();
+        entity.id = id;
+        entity.nextAttempt = createdAt.plusSeconds(60);
+        return entity;
     }
 
-    void apply(Payment p) {
-        orderId = p.orderId();
-        buyerId = p.buyerId();
-        amount = p.amount();
-        currency = p.currency();
-        transactionRef = p.transactionRef();
-        createdAt = p.createdAt();
-        expiresAt = p.expiresAt();
-        status = p.status();
-        providerTransactionNo = p.providerTransactionNo();
-        if (refundStatus != p.refundStatus() && p.refundStatus() == Payment.RefundStatus.REQUESTED) {
+    void update(UUID orderId, UUID buyerId, BigDecimal amount, String currency, String transactionRef, Instant createdAt, Instant expiresAt, Payment.Status status, String providerTransactionNo, Payment.RefundStatus refundStatus, String refundRequestId, String refundActor, String refundReason, Instant refundCreatedAt) {
+        this.orderId = orderId;
+        this.buyerId = buyerId;
+        this.amount = amount;
+        this.currency = currency;
+        this.transactionRef = transactionRef;
+        this.createdAt = createdAt;
+        this.expiresAt = expiresAt;
+        this.status = status;
+        this.providerTransactionNo = providerTransactionNo;
+        if (this.refundStatus != refundStatus && refundStatus == Payment.RefundStatus.REQUESTED) {
             attempts = 0;
-            nextAttempt = p.refundCreatedAt();
+            nextAttempt = refundCreatedAt;
         }
-        refundStatus = p.refundStatus();
-        refundRequestId = p.refundRequestId();
-        refundActor = p.refundActor();
-        refundReason = p.refundReason();
-        refundCreatedAt = p.refundCreatedAt();
+        this.refundStatus = refundStatus;
+        this.refundRequestId = refundRequestId;
+        this.refundActor = refundActor;
+        this.refundReason = refundReason;
+        this.refundCreatedAt = refundCreatedAt;
     }
 
-    Payment domain() {
-        return new Payment(id, orderId, buyerId, amount, currency, transactionRef, createdAt, expiresAt, status,
-                providerTransactionNo, refundStatus, refundRequestId, refundActor, refundReason, refundCreatedAt);
+    record ReconciliationLease(String token, int attempts) {
     }
+
+    ReconciliationLease claimReconciliation(Instant now) {
+        if (nextAttempt.isAfter(now) || (leaseUntil != null && !leaseUntil.isBefore(now)))
+            return null;
+        leaseToken = java.util.UUID.randomUUID().toString();
+        leaseUntil = now.plusSeconds(120);
+        attempts++;
+        return new ReconciliationLease(leaseToken, attempts);
+    }
+
+    boolean ownsLease(String token) {
+        return java.util.Objects.equals(leaseToken, token);
+    }
+
+    void completeReconciliation(String token, Instant next, String outcome) {
+        if (!ownsLease(token))
+            return;
+        leaseToken = null;
+        leaseUntil = null;
+        nextAttempt = next;
+        lastOutcome = outcome;
+    }
+
 }

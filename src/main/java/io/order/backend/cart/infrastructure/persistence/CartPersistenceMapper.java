@@ -14,7 +14,7 @@ public final class CartPersistenceMapper {
     }
 
     public static void copy(Cart cart, CartEntity entity) {
-        entity.update(cart.getId().value(), cart.getUserId().value(), cart.getSubTotal(), cart.getShippingCost(), cart.getTotal(), cart.getTax(), cart.getCouponCode(), cart.getDiscount());
+        entity.update(cart.getUserId().value(), cart.getSubTotal(), cart.getShippingCost(), cart.getTotal(), cart.getTax(), cart.getCouponCode(), cart.getDiscount());
         entity.clearItem();
         cart.getItems().forEach(i -> entity.addItem(CartItemMapper.toEntity(i)));
     }

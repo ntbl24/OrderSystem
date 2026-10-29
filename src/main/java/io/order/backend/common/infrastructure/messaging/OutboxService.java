@@ -1,5 +1,6 @@
 package io.order.backend.common.infrastructure.messaging;
 
+import io.order.backend.common.application.port.OutboxPort;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -7,7 +8,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class OutboxService implements io.order.backend.common.application.port.OutboxPort {
+public class OutboxService implements OutboxPort {
     private final JdbcTemplate jdbc;
 
     public OutboxService(JdbcTemplate jdbc) {

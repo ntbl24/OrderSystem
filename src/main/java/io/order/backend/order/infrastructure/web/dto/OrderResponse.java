@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import io.order.backend.order.domain.Order;
 import lombok.Data;
 
 @Data
@@ -25,13 +26,13 @@ public class OrderResponse {
     private LocalDateTime orderDate;
     private LocalDateTime estimatedDeliveryDate;
     private String notes;
-    public static OrderResponse from(io.order.backend.order.application.port.in.OrderResult result) {
+    public static OrderResponse from(Order result) {
         var response = new OrderResponse();
-        response.setUserId(result.getUserId());
-        response.setId(result.getId());
+        response.setUserId(result.getUserId().toString());
+        response.setId(result.getId().toString());
         response.setSellerId(result.getSellerId());
         response.setExpiresAt(result.getExpiresAt());
-        response.setOrderNumber(result.getOrderNumber());
+        response.setOrderNumber(result.getOrderNumber().toString());
         response.setItems(result.getItems() == null ? null : result.getItems().stream().map(OrderItemResponse::from).toList());
         response.setSubtotal(result.getSubtotal());
         response.setShippingCost(result.getShippingCost());

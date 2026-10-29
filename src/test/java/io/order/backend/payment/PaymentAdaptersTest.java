@@ -3,7 +3,7 @@ package io.order.backend.payment;
 import io.order.backend.payment.application.port.in.PaymentWorkUseCase;
 import io.order.backend.payment.application.port.in.RefundIntentUseCase;
 import io.order.backend.payment.application.port.out.PayableOrderPort;
-import io.order.backend.payment.application.port.out.PaymentStore;
+import io.order.backend.payment.application.port.out.PaymentRepository;
 import io.order.backend.payment.application.usecase.RefundIntentService;
 import io.order.backend.payment.infrastructure.messaging.RefundIntentHandler;
 import io.order.backend.payment.infrastructure.scheduling.PaymentScheduler;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 class PaymentAdaptersTest {
     @Mock PaymentWorkUseCase work;
     @Mock RefundIntentUseCase refunds;
-    @Mock PaymentStore store;
+    @Mock PaymentRepository store;
     @Mock PayableOrderPort orders;
 
     @Test
@@ -48,7 +48,7 @@ class PaymentAdaptersTest {
         new RefundIntentService(store, orders).acknowledge("payment");
         var sequence = inOrder(store, orders);
         sequence.verify(store).find("payment");
-        sequence.verify(orders).lockForCallback("order");
+        sequence.verify(orders).lockForCallback(io.order.backend.order.domain.OrderId.of("order"));
         sequence.verify(store).lock("payment");
         verifyNoMoreInteractions(store, orders);
     }

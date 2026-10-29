@@ -115,67 +115,37 @@ public class Shipment {
         customsInfo, customsValue, customsCurrency);
     }
 
-    public void update(
-        OrderId orderId,
-        UserId userId,
-        TrackingNumber trackingNumber,
-        String carrier,
-        String serviceType,
-        BigDecimal weight,
-        String weightUnit,
-        BigDecimal shippingCost,
-        String status,
-        LocalDateTime estimatedDeliveryDate,
-        LocalDateTime actualDeliveryDate,
-        String originAddress,
-        String originCity,
-        String originState,
-        String originCountry,
-        String originPostalCode,
-        String destinationAddress,
-        String destinationCity,
-        String destinationState,
-        String destinationCountry,
-        String destinationPostalCode,
-        String notes,
-        String labelUrl,
-        String returnLabelUrl,
-        boolean signatureRequired,
-        boolean insuranceRequired,
-        BigDecimal declaredValue,
-        String customsInfo,
-        String customsValue,
-        String customsCurrency) {
-            this.orderId = orderId;
-            this.userId = userId;
-            this.trackingNumber = trackingNumber;
-            this.carrier = carrier;
-            this.serviceType = serviceType;
-            this.weight = weight;
-            this.weightUnit = weightUnit;
-            this.shippingCost = shippingCost;
-            this.status = status;
-            this.estimatedDeliveryDate = estimatedDeliveryDate;
-            this.actualDeliveryDate = actualDeliveryDate;
-            this.originAddress = originAddress;
-            this.originCity = originCity;
-            this.originState = originState;
-            this.originCountry = originCountry;
-            this.originPostalCode = originPostalCode;
-            this.destinationAddress = destinationAddress;
-            this.destinationCity = destinationCity;
-            this.destinationState = destinationState;
-            this.destinationCountry = destinationCountry;
-            this.destinationPostalCode = destinationPostalCode;
-            this.notes = notes;
-            this.labelUrl = labelUrl;
-            this.returnLabelUrl = returnLabelUrl;
-            this.signatureRequired = signatureRequired;
-            this.insuranceRequired = insuranceRequired;
-            this.declaredValue = declaredValue;
-            this.customsInfo = customsInfo;
-            this.customsValue = customsValue;
-            this.customsCurrency = customsCurrency;
+    public void updateDetails(ShipmentDetails newShipment) {
+            this.orderId = newShipment.orderId();
+            this.userId = newShipment.userId();
+            this.trackingNumber = newShipment.trackingNumber();
+            this.carrier = newShipment.carrier();
+            this.serviceType = newShipment.serviceType();
+            this.weight = newShipment.weight();
+            this.weightUnit = newShipment.weightUnit();
+            this.shippingCost = newShipment.shippingCost();
+            this.status = newShipment.status();
+            this.estimatedDeliveryDate = newShipment.estimatedDeliveryDate();
+            this.actualDeliveryDate = newShipment.actualDeliveryDate();
+            this.originAddress = newShipment.originAddress();
+            this.originCity = newShipment.originCity();
+            this.originState = newShipment.originState();
+            this.originCountry = newShipment.originCountry();
+            this.originPostalCode = newShipment.originPostalCode();
+            this.destinationAddress = newShipment.destinationAddress();
+            this.destinationCity = newShipment.destinationCity();
+            this.destinationState = newShipment.destinationState();
+            this.destinationCountry = newShipment.destinationCountry();
+            this.destinationPostalCode = newShipment.destinationPostalCode();
+            this.notes = newShipment.notes();
+            this.labelUrl = newShipment.labelUrl();
+            this.returnLabelUrl = newShipment.returnLabelUrl();
+            this.signatureRequired = newShipment.signatureRequired();
+            this.insuranceRequired = newShipment.insuranceRequired();
+            this.declaredValue = newShipment.declaredValue();
+            this.customsInfo = newShipment.customsInfo();
+            this.customsValue = newShipment.customsValue();
+            this.customsCurrency = newShipment.customsCurrency();
         }
     public Shipment(){}
 

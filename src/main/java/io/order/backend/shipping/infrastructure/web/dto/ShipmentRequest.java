@@ -1,6 +1,5 @@
 package io.order.backend.shipping.infrastructure.web.dto;
 
-import io.order.backend.order.domain.Order;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.shipping.application.port.in.ShipmentCommand;
 import io.order.backend.shipping.domain.TrackingNumber;

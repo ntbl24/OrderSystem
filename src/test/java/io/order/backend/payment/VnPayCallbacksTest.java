@@ -1,7 +1,7 @@
 package io.order.backend.payment;
 
 import io.order.backend.payment.application.port.in.PaymentNotification;
-import io.order.backend.payment.application.port.in.PaymentUseCase;
+import io.order.backend.payment.application.port.in.PaymentCallbackUseCase;
 import io.order.backend.payment.infrastructure.provider.VnPayCallbacks;
 import io.order.backend.payment.infrastructure.provider.VnPayProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class VnPayCallbacksTest {
     @Mock VnPayProvider provider;
-    @Mock PaymentUseCase payments;
+    @Mock PaymentCallbackUseCase payments;
     VnPayCallbacks callbacks;
 
     @BeforeEach void setup() { callbacks = new VnPayCallbacks(provider, payments); }
@@ -25,14 +25,14 @@ class VnPayCallbacksTest {
     @Test void duplicateFields_rejectBeforeSignatureOrApplication() {
         var fields = Map.of("vnp_TxnRef", List.of("one", "two"));
         assertThat(callbacks.ipn(fields)).isEqualTo(new VnPayCallbacks.Acknowledgment("97", "Duplicate fields"));
-        assertThat(callbacks.returnView(fields)).isEqualTo(new PaymentUseCase.ReturnView(false, "INVALID", null));
+        assertThat(callbacks.returnView(fields)).isEqualTo(new PaymentCallbackUseCase.ReturnView(false, "INVALID", null));
         verifyNoInteractions(provider, payments);
     }
 
     @Test void ipn_applicationResults_preserveProtocolCodesAndMessages() {
         var notification = new PaymentNotification(true, true, "ref", null, "VND", true, "123");
         when(provider.decodeNotification(Map.of())).thenReturn(notification);
-        var results = PaymentUseCase.NotificationResult.values();
+        var results = PaymentCallbackUseCase.NotificationResult.values();
         var expected = List.of(
                 new VnPayCallbacks.Acknowledgment("97", "Invalid signature"),
                 new VnPayCallbacks.Acknowledgment("01", "Order not found"),
@@ -49,7 +49,7 @@ class VnPayCallbacksTest {
     @Test void returnView_decodedNotification_isPassedToReadOnlyUseCase() {
         var notification = new PaymentNotification(false, false, null, null, null, false, null);
         when(provider.decodeNotification(Map.of("vnp_TxnRef", "ref"))).thenReturn(notification);
-        var expected = new PaymentUseCase.ReturnView(false, "INVALID", null);
+        var expected = new PaymentCallbackUseCase.ReturnView(false, "INVALID", null);
         when(payments.returnView(notification)).thenReturn(expected);
         assertThat(callbacks.returnView(Map.of("vnp_TxnRef", List.of("ref")))).isEqualTo(expected);
         verify(payments, never()).ipn(any());

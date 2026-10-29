@@ -4,16 +4,18 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
-import io.order.backend.common.domain.BaseEntity;
+import io.order.backend.payment.domain.PaymentId;
+import io.order.backend.product.domain.ProductId;
+import io.order.backend.user.domain.UserId;
 
 public class Order {
     private OrderId id;
-    private String userId;
-    private String orderNumber;
+    private UserId userId;
+    private OrderNumber orderNumber;
     private List<OrderItem> items;
     private BigDecimal subtotal;
+    private BigDecimal total;
     private BigDecimal shippingCost;
     private String shippingAddress;
     private String paymentMethod;
@@ -24,21 +26,89 @@ public class Order {
     private String notes;
     private String sellerId;
     private Instant expiresAt;
-    private String paymentId;
-    private String reviewPaymentId;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private PaymentId paymentId;
+    private PaymentId reviewPaymentId;
     private boolean deleted;
+    private String reservationStatus;
+    private Long version;
 
-    public static Order place(String ownerId, String sellerId, List<OrderItem> items,
+    Order(){}
+
+    public Order(
+            OrderId id,
+            UserId userId,
+            OrderNumber orderNumber,
+            BigDecimal subtotal,
+            BigDecimal shippingCost,
+            String shippingAddress,
+            String paymentMethod,
+            String paymentStatus,
+            String orderStatus,
+            LocalDateTime orderDate,
+            LocalDateTime estimatedDeliveryDate,
+            String notes,
+            String sellerId,
+            Instant expiresAt,
+            PaymentId paymentId,
+            PaymentId reviewPaymentId,
+            boolean deleted,
+            String reservationStatus,
+            Long version) {
+        this.id = id;
+        this.userId = userId;
+        this.orderNumber = orderNumber;
+        this.subtotal = subtotal;
+        this.shippingCost = shippingCost;
+        this.shippingAddress = shippingAddress;
+        this.paymentMethod = paymentMethod;
+        this.paymentStatus = paymentStatus;
+        this.orderStatus = orderStatus;
+        this.orderDate = orderDate;
+        this.estimatedDeliveryDate = estimatedDeliveryDate;
+        this.notes = notes;
+        this.sellerId = sellerId;
+        this.expiresAt = expiresAt;
+        this.paymentId = paymentId;
+        this.reviewPaymentId = reviewPaymentId;
+        this.deleted = deleted;
+        this.reservationStatus = reservationStatus;
+        this.version = version;
+    }
+
+    public void addItem(ProductId productId, String productName, String sku, int quantity, BigDecimal unitPrice) {
+        int existing = items.stream().filter(i -> i.getProductId().equals(productId))
+                .mapToInt(OrderItem::getQuantity).findFirst().orElse(0);
+        addOrUpdateItem(productId, productName, sku, Math.addExact(existing, quantity), unitPrice);
+    }
+
+    public void addOrUpdateItem(ProductId productId, String productName, String sku, int quantity, BigDecimal unitPrice) {
+        OrderItem replacement = new OrderItem(productId, productName, sku, quantity, unitPrice);
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getProductId().equals(productId)) {
+                items.set(i, replacement);
+                calculateTotals();
+                return;
+            }
+        }
+        if (items.size() >= 100)
+            throw new IllegalArgumentException("Too many cart items");
+        items.add(replacement);
+        calculateTotals();
+    }
+
+    private void calculateTotals() {
+        subtotal = items.stream().map(OrderItem::getSubtotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        total = subtotal.add(shippingCost);
+    }
+
+    public static Order place(UserId ownerId, String sellerId, List<OrderItem> items,
             BigDecimal subtotal, String shippingAddress, String notes, Instant now,
             LocalDateTime orderDate) {
-        var order = new Order();
-        order.setId(UUID.randomUUID().toString());
-        order.orderNumber = "ORD-" + order.getId();
+        Order order = new Order();
+        order.id = OrderId.generate();
+        order.orderNumber = OrderNumber.fromOrderId(order.id);
         order.userId = ownerId;
         order.sellerId = sellerId;
-        order.items = List.copyOf(items);
         order.subtotal = subtotal;
         order.shippingCost = BigDecimal.valueOf(30000);
         order.shippingAddress = shippingAddress;
@@ -49,50 +119,30 @@ public class Order {
         order.reservationStatus = "HELD";
         order.orderDate = orderDate;
         order.expiresAt = now.plusSeconds(900);
+
+        items.stream().forEach(item -> order.addItem(item.getProductId(), item.getProductName(), item.getSku(), item.getQuantity(), item.getUnitPrice()));
+        
         return order;
     }
 
-    public String getReviewPaymentId() {
+    public PaymentId getReviewPaymentId() {
         return reviewPaymentId;
     }
-
-    public void setReviewPaymentId(String value) {
-        reviewPaymentId = value;
-    }
-
-    private String reservationStatus;
-    private Long version;
 
     public String getSellerId() {
         return sellerId;
     }
 
-    public void setSellerId(String value) {
-        sellerId = value;
-    }
-
-    public java.time.Instant getExpiresAt() {
+    public Instant getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(java.time.Instant value) {
-        expiresAt = value;
-    }
-
-    public String getPaymentId() {
+    public PaymentId getPaymentId() {
         return paymentId;
-    }
-
-    public void setPaymentId(String value) {
-        paymentId = value;
     }
 
     public String getReservationStatus() {
         return reservationStatus;
-    }
-
-    public void setReservationStatus(String value) {
-        reservationStatus = value;
     }
 
     public boolean requiresReservationTransition(String target) {
@@ -113,10 +163,6 @@ public class Order {
         return version;
     }
 
-    public void setVersion(Long value) {
-        version = value;
-    }
-
     public BigDecimal getTotal() {
         return subtotal.add(shippingCost);
     }
@@ -131,15 +177,15 @@ public class Order {
         orderStatus = "CANCELLED";
     }
 
-    public boolean expire(java.time.Instant now) {
+    public boolean expire(Instant now) {
         if (!unpaid() || expiresAt.isAfter(now))
             return false;
         orderStatus = "EXPIRED";
         return true;
     }
 
-    public boolean acceptPayment(String id, BigDecimal amount, String currency, java.time.Instant now) {
-        if (id == null || id.isBlank())
+    public boolean acceptPayment(PaymentId id, BigDecimal amount, String currency, Instant now) {
+        if (id == null)
             throw new IllegalArgumentException("Payment ID required");
         if (id.equals(paymentId))
             return false;
@@ -156,7 +202,7 @@ public class Order {
         return true;
     }
 
-    public boolean acceptRefund(String id, BigDecimal amount, String currency) {
+    public boolean acceptRefund(PaymentId id, BigDecimal amount, String currency) {
         if (!"VND".equals(currency) || amount == null || amount.compareTo(getTotal()) != 0)
             throw new IllegalStateException("Refund amount or currency mismatch");
         if (!id.equals(paymentId) || "REFUNDED".equals(paymentStatus))
@@ -166,127 +212,56 @@ public class Order {
         return true;
     }
 
-    public String getUserId() {
+    public UserId getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getOrderNumber() {
+    public OrderNumber getOrderNumber() {
         return orderNumber;
     }
 
-    public void setOrderNumber(String orderNumber) {
-        this.orderNumber = orderNumber;
-    }
 
     public List<OrderItem> getItems() {
         return items;
-    }
-
-    public void setItems(List<OrderItem> items) {
-        this.items = items;
     }
 
     public BigDecimal getSubtotal() {
         return subtotal;
     }
 
-    public void setSubtotal(BigDecimal subtotal) {
-        this.subtotal = subtotal;
-    }
-
     public BigDecimal getShippingCost() {
         return shippingCost;
-    }
-
-    public void setShippingCost(BigDecimal shippingCost) {
-        this.shippingCost = shippingCost;
     }
 
     public String getShippingAddress() {
         return shippingAddress;
     }
 
-    public void setShippingAddress(String shippingAddress) {
-        this.shippingAddress = shippingAddress;
-    }
-
     public String getPaymentMethod() {
         return paymentMethod;
-    }
-
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
     }
 
     public String getPaymentStatus() {
         return paymentStatus;
     }
 
-    public void setPaymentStatus(String paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
-
     public String getOrderStatus() {
         return orderStatus;
-    }
-
-    public void setOrderStatus(String orderStatus) {
-        this.orderStatus = orderStatus;
     }
 
     public LocalDateTime getOrderDate() {
         return orderDate;
     }
 
-    public void setOrderDate(LocalDateTime orderDate) {
-        this.orderDate = orderDate;
-    }
-
     public LocalDateTime getEstimatedDeliveryDate() {
         return estimatedDeliveryDate;
-    }
-
-    public void setEstimatedDeliveryDate(LocalDateTime estimatedDeliveryDate) {
-        this.estimatedDeliveryDate = estimatedDeliveryDate;
     }
 
     public String getNotes() {
         return notes;
     }
 
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public OrderId getOrderId() {
+    public OrderId getId() {
         return id;
-    }
-
-    public OrderNumber getOrderNumberVo() {
-        return orderNumber != null ? OrderNumber.of(orderNumber) : null;
-    }
-
-    public void setOrderNumberVo(OrderNumber orderNumber) {
-        this.orderNumber = orderNumber != null ? orderNumber.value() : null;
-    }
-
-    public io.order.backend.user.domain.UserId getUserIdentifier() {
-        return userId != null ? io.order.backend.user.domain.UserId.of(userId) : null;
-    }
-
-    public void setUserIdentifier(io.order.backend.user.domain.UserId userId) {
-        this.userId = userId != null ? userId.value().toString() : null;
-    }
-
-    public io.order.backend.payment.domain.PaymentId getPaymentIdentifier() {
-        return paymentId != null ? io.order.backend.payment.domain.PaymentId.of(paymentId) : null;
-    }
-
-    public void setPaymentIdentifier(io.order.backend.payment.domain.PaymentId paymentId) {
-        this.paymentId = paymentId != null ? paymentId.value().toString() : null;
     }
 }

@@ -1,7 +1,7 @@
 package io.order.backend.product;
 
 import io.order.backend.common.exception.ResourceNotFoundException;
-import io.order.backend.product.application.port.in.CreateProductCommand;
+import io.order.backend.product.application.port.in.ProductCommand;
 import io.order.backend.product.application.port.out.ProductRepository;
 import io.order.backend.product.application.usecase.CreateProductService;
 import io.order.backend.product.domain.Product;
@@ -27,7 +27,7 @@ class CreateProductServiceTest {
 
     @Test
     void createProduct_whenSkuExists_shouldThrowException() {
-        CreateProductCommand command = new CreateProductCommand(
+        ProductCommand command = new ProductCommand(
                 "Title", "Cat", "Desc", new BigDecimal("100"), 10, "SKU-EXISTS", "seller"
         );
         when(products.existsBySku("SKU-EXISTS")).thenReturn(true);
@@ -41,7 +41,7 @@ class CreateProductServiceTest {
 
     @Test
     void createProduct_whenValid_shouldSaveAndReturnProduct() {
-        CreateProductCommand command = new CreateProductCommand(
+        ProductCommand command = new ProductCommand(
                 "Title", "Cat", "Desc", new BigDecimal("100"), 10, "SKU-NEW", "seller"
         );
         when(products.existsBySku("SKU-NEW")).thenReturn(false);

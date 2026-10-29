@@ -29,7 +29,7 @@ public final class ProductPersistenceMapper {
     public static void copy(Product d, ProductEntity e) {
         Objects.requireNonNull(d, "Domain product cannot be null");
         Objects.requireNonNull(e, "Entity cannot be null");
-        e.update(d.getId().value(), d.getTitle(), d.getCategory(), d.getDescription(), d.getPrice(), d.getStock(), d.getSku(), d.getSellerId(), d.getReserved());
+        e.update(d.getTitle(), d.getCategory(), d.getDescription(), d.getPrice(), d.getStock(), d.getSku(), d.getSellerId(), d.getReserved());
     }
 
     public static ProductEntity toEntity(Product d) {

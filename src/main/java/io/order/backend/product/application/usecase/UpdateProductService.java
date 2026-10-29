@@ -1,10 +1,11 @@
 package io.order.backend.product.application.usecase;
 
 import io.order.backend.common.exception.ResourceNotFoundException;
-import io.order.backend.product.application.port.in.UpdateProductCommand;
+import io.order.backend.product.application.port.in.ProductCommand;
 import io.order.backend.product.application.port.in.UpdateProductUseCase;
 import io.order.backend.product.application.port.out.ProductRepository;
 import io.order.backend.product.domain.Product;
+import io.order.backend.product.domain.ProductDetails;
 import io.order.backend.product.domain.ProductId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,12 +18,13 @@ public class UpdateProductService implements UpdateProductUseCase {
 
     @Override
     @Transactional
-    public Product updateProduct(ProductId id, UpdateProductCommand command) {
+    public Product updateProduct(ProductId id, ProductCommand command) {
         Product existingProduct = productRepository.lockById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
 
-        existingProduct.replaceDetails(command.title(), command.category(), command.description(),
-                command.price(), command.stock(), command.sku(), command.sellerId());
+        ProductDetails details = ProductCommandMapper.toDetails(command);
+
+        existingProduct.replaceDetails(details);
         return productRepository.save(existingProduct);
     }
 

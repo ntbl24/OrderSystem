@@ -1,6 +1,5 @@
 package io.order.backend.payment;
 
-import io.order.backend.payment.application.port.in.CreatePaymentCommand;
 import io.order.backend.payment.application.port.in.PaymentResult;
 import io.order.backend.payment.application.port.in.RefundPaymentCommand;
 import io.order.backend.payment.infrastructure.web.dto.PaymentResponse;
@@ -16,8 +15,8 @@ class PaymentResultCompatibilityTest {
 
     @Test
     void commands_preservePersistedIdempotencyHashInput() {
-        assertThat(json.writeValueAsString(new CreatePaymentCommand("order")))
-                .isEqualTo("{\"orderId\":\"order\"}");
+        assertThat(json.writeValueAsString(java.util.Map.of("orderId", io.order.backend.order.domain.OrderId.of("order").toString())))
+                .isEqualTo("{\"orderId\":\"" + io.order.backend.order.domain.OrderId.of("order") + "\"}");
         assertThat(json.writeValueAsString(new RefundPaymentCommand("payment", "requested")))
                 .isEqualTo("{\"paymentId\":\"payment\",\"reason\":\"requested\"}");
     }

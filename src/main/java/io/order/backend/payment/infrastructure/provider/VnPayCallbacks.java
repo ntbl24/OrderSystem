@@ -1,6 +1,6 @@
 package io.order.backend.payment.infrastructure.provider;
 
-import io.order.backend.payment.application.port.in.PaymentUseCase;
+import io.order.backend.payment.application.port.in.PaymentCallbackUseCase;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
@@ -10,9 +10,9 @@ import java.util.stream.Collectors;
 @Component
 public class VnPayCallbacks {
     private final VnPayProvider provider;
-    private final PaymentUseCase payments;
+    private final PaymentCallbackUseCase payments;
 
-    public VnPayCallbacks(VnPayProvider provider, PaymentUseCase payments) {
+    public VnPayCallbacks(VnPayProvider provider, PaymentCallbackUseCase payments) {
         this.provider = provider;
         this.payments = payments;
     }
@@ -30,9 +30,9 @@ public class VnPayCallbacks {
         };
     }
 
-    public PaymentUseCase.ReturnView returnView(Map<String, List<String>> fields) {
+    public PaymentCallbackUseCase.ReturnView returnView(Map<String, List<String>> fields) {
         if (hasDuplicates(fields))
-            return new PaymentUseCase.ReturnView(false, "INVALID", null);
+            return new PaymentCallbackUseCase.ReturnView(false, "INVALID", null);
         return payments.returnView(provider.decodeNotification(singleValues(fields)));
     }
 

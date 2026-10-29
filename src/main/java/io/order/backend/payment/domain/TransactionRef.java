@@ -1,6 +1,7 @@
 package io.order.backend.payment.domain;
 
 import java.util.Objects;
+import java.util.UUID;
 
 public record TransactionRef(String value) {
     public TransactionRef {
@@ -8,6 +9,10 @@ public record TransactionRef(String value) {
         if (value.isBlank()) {
             throw new IllegalArgumentException("Transaction ref cannot be blank");
         }
+    }
+
+    public static TransactionRef generate(){
+        return new TransactionRef(UUID.randomUUID().toString().replace("-", ""));
     }
 
     public static TransactionRef of(String value) {

@@ -3,10 +3,13 @@ package io.order.backend.order.application.port.in;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-public interface PayableOrderUseCase {
-    PayableOrder lockForPayment(String id, String buyerId);
-    void lockForCallback(String id);
+import io.order.backend.order.domain.OrderId;
+import io.order.backend.user.domain.UserId;
 
-    record PayableOrder(String id, String buyerId, BigDecimal amount, String currency, Instant expiresAt) {
+public interface PayableOrderUseCase {
+    PayableOrder lockForPayment(OrderId id, UserId buyerId);
+    void lockForCallback(OrderId id);
+
+    record PayableOrder(OrderId id, UserId buyerId, BigDecimal amount, String currency, Instant expiresAt) {
     }
 }

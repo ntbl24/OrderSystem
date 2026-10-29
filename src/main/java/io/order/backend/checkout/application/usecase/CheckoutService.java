@@ -6,7 +6,8 @@ import io.order.backend.common.application.port.IdempotencyPort;
 import io.order.backend.checkout.application.port.in.CheckoutUseCase;
 import io.order.backend.checkout.application.port.out.InventoryPort;
 import io.order.backend.checkout.application.port.out.PlaceOrderPort;
-import io.order.backend.order.application.port.in.OrderResult;
+import io.order.backend.order.domain.Order;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +23,12 @@ public class CheckoutService implements CheckoutUseCase {
     private final PlaceOrderPort orders;
 
     @Transactional
-    public OrderResult checkout(String key, CheckoutCommand request) {
+    public Order checkout(String key, CheckoutCommand request) {
         String owner = buyer.buyerId();
-        return idempotency.execute(owner, "CHECKOUT", key, request, OrderResult.class, () -> create(owner, request));
+        return idempotency.execute(owner, "CHECKOUT", key, request, Order.class, () -> create(owner, request));
     }
 
-    private OrderResult create(String owner, CheckoutCommand request) {
+    private Order create(String owner, CheckoutCommand request) {
         if (request.items() == null || request.items().isEmpty() || request.items().size() > 100
                 || request.shippingAddress() == null || request.shippingAddress().isBlank())
             throw new IllegalArgumentException("Invalid checkout");

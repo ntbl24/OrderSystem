@@ -1,21 +1,19 @@
 package io.order.backend.common.exception;
 
-import org.springframework.http.HttpStatus;
-
 import lombok.Getter;
 
 @Getter 
 public class BaseException extends RuntimeException{
     private final String code;
-    private final HttpStatus status;
+    private final int status;
 
     public BaseException(String message) {
         super(message);
         this.code = "INTERNAL_SERVER_ERROR";
-        this.status = HttpStatus.INTERNAL_SERVER_ERROR;
+        this.status = 500;
     }
 
-    public BaseException(String message, String code, HttpStatus status) {
+    public BaseException(String message, String code, int status) {
         super(message);
         this.code = code;
         this.status = status;
@@ -24,10 +22,10 @@ public class BaseException extends RuntimeException{
     public BaseException(String message, Throwable cause) {
         super(message, cause);
         this.code = "INTERNAL_SERVER_ERROR";
-        this.status = HttpStatus.INTERNAL_SERVER_ERROR;
+        this.status = 500;
     }
     
-    public BaseException(String message, String code, HttpStatus status, Throwable cause) {
+    public BaseException(String message, String code, int status, Throwable cause) {
         super(message, cause);
         this.code = code;
         this.status = status;

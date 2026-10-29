@@ -1,50 +1,30 @@
 package io.order.backend.order.application.port.out;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import io.order.backend.order.domain.Order;
+import io.order.backend.order.domain.OrderId;
+import io.order.backend.order.domain.OrderNumber;
+import io.order.backend.user.domain.UserId;
 
 public interface OrderRepository {
-    List<Order> findByUserId(String userId);
+    List<Order> findByUserId(UserId userId);
 
-    Optional<Order> findByOrderNumber(String orderNumber);
+    Optional<Order> findByOrderNumber(OrderNumber orderNumber);
 
     List<Order> findByOrderStatus(String status);
 
     Order save(Order order);
 
-    Optional<Order> lockById(String id);
+    Optional<Order> lockById(OrderId id);
 
-    List<String> expiredIds(java.time.Instant now);
+    List<OrderId> expiredIds(Instant now);
 
-    Optional<Order> findById(String id);
+    Optional<Order> findById(OrderId id);
 
-    boolean existsById(String id);
+    boolean existsById(OrderId id);
 
-    void deleteById(String id);
-
-    default Optional<Order> findById(io.order.backend.order.domain.OrderId id) {
-        return findById(id.value().toString());
-    }
-
-    default Optional<Order> lockById(io.order.backend.order.domain.OrderId id) {
-        return lockById(id.value().toString());
-    }
-
-    default boolean existsById(io.order.backend.order.domain.OrderId id) {
-        return existsById(id.value().toString());
-    }
-
-    default void deleteById(io.order.backend.order.domain.OrderId id) {
-        deleteById(id.value().toString());
-    }
-
-    default List<Order> findByUserId(io.order.backend.user.domain.UserId userId) {
-        return findByUserId(userId.value().toString());
-    }
-
-    default Optional<Order> findByOrderNumber(io.order.backend.order.domain.OrderNumber orderNumber) {
-        return findByOrderNumber(orderNumber.value());
-    }
+    void deleteById(OrderId id);
 }
