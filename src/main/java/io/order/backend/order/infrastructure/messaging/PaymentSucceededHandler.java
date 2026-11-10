@@ -1,6 +1,8 @@
 package io.order.backend.order.infrastructure.messaging;
 
 import io.order.backend.common.application.port.OutboxHandler;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.order.application.port.in.PaymentEventUseCase;
 import io.order.backend.order.application.port.in.PaymentEventUseCase.PaymentEvent;
 import tools.jackson.databind.json.JsonMapper;
@@ -19,8 +21,8 @@ public class PaymentSucceededHandler implements OutboxHandler {
 
     public void handle(String eventId, String aggregateId, String payload) {
         var event = json.readValue(payload, PaymentEvent.class);
-        if (!aggregateId.equals(event.paymentId()))
-            throw new IllegalArgumentException("Order event mismatch");
+        if (!aggregateId.equals(event.paymentId().toString()))
+            throw new AppException(ErrorCode.BAD_REQUEST, "Order event mismatch");
         payments.paymentSucceeded(event);
     }
 }

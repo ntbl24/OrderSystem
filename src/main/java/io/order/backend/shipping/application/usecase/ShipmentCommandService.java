@@ -5,7 +5,8 @@ import io.order.backend.shipping.application.port.in.ShipmentCommandUseCase;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.shipping.domain.Shipment;
 import io.order.backend.shipping.domain.ShipmentId;
 import io.order.backend.shipping.application.port.in.ShipmentCommand;
@@ -22,7 +23,7 @@ public class ShipmentCommandService implements ShipmentCommandUseCase {
     @Transactional
     public void deleteShipment(ShipmentId id) {
         if (!shipmentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Shipment not found with id: " + id);
+            throw new AppException(ErrorCode.SHIPMENT_NOT_FOUND);
         }
         shipmentRepository.deleteById(id);
     }
@@ -38,7 +39,7 @@ public class ShipmentCommandService implements ShipmentCommandUseCase {
     @Transactional
     public Shipment generateShippingLabel(ShipmentId id){
         Shipment shipment = shipmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         
         shipment.generateLabel();
         shipment = shipmentRepository.save(shipment);

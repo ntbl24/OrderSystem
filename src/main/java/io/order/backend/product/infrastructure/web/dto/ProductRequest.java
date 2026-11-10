@@ -5,9 +5,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
+
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 public class ProductRequest {
     @NotBlank(message = "Product name is required")
     private String title;
@@ -28,8 +31,6 @@ public class ProductRequest {
 
     @NotBlank(message = "SKU is required")
     private String sku;
-
-    private String id;
 
     @NotBlank(message = "Seller ID is required")
     private String sellerId;

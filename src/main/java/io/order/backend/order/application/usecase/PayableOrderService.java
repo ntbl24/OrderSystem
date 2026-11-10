@@ -1,6 +1,7 @@
 package io.order.backend.order.application.usecase;
 
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.order.application.port.in.PayableOrderUseCase;
 import io.order.backend.order.application.port.out.OrderRepository;
 import io.order.backend.order.domain.OrderId;
@@ -19,17 +20,17 @@ public class PayableOrderService implements PayableOrderUseCase {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public PayableOrder lockForPayment(OrderId id, UserId buyerId) {
-        var order = orders.lockById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        var order = orders.lockById(id).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
         if (!order.getUserId().equals(buyerId))
-            throw new ResourceNotFoundException("Order not found");
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
         if (order.expire(Instant.now()))
-            throw new IllegalStateException("Order is not payable");
+            throw new AppException(ErrorCode.BAD_REQUEST, "Order is not payable");
         return new PayableOrder(order.getId(), order.getUserId(), order.getTotal(), "VND", order.getExpiresAt());
     }
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void lockForCallback(OrderId id) {
-        orders.lockById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+        orders.lockById(id).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
     }
 }

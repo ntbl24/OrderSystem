@@ -9,7 +9,8 @@ import io.order.backend.cart.infrastructure.web.dto.CartResponse;
 import io.order.backend.cart.infrastructure.web.dto.CreateCartItemRequest;
 import io.order.backend.cart.infrastructure.web.dto.CreateCartRequest;
 import io.order.backend.cart.infrastructure.web.dto.UpdateCartRequest;
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.common.response.ApiResponse;
 import io.order.backend.product.domain.ProductId;
 import io.order.backend.user.domain.UserId;
@@ -35,7 +36,7 @@ public class CartController {
     @GetMapping("/user/{userId}")
     public ApiResponse<CartResponse> getUserCart(@PathVariable String userId) {
         return ApiResponse.success(CartResponse.from(cartQueryUseCase.getCartByUserId(UserId.of(userId))
-                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"))));
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND))));
     }
 
     @PostMapping

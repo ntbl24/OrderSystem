@@ -1,5 +1,7 @@
 package io.order.backend.payment.infrastructure.persistence;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.payment.application.port.out.PaymentRepository;
 import io.order.backend.payment.domain.Payment;
@@ -34,7 +36,7 @@ public class JpaPaymentAdapter implements PaymentRepository {
     @Override
     public Payment lock(PaymentId id) {
         return repository.findFreshForUpdate(id.value()).map(PaymentPersistenceMapper::domain)
-                .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND,"Payment not found"));
     }
 
     @Override

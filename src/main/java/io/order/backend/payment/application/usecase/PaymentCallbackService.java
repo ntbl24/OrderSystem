@@ -4,6 +4,8 @@ import io.order.backend.common.application.port.OutboxPort;
 import io.order.backend.payment.application.port.in.*;
 import io.order.backend.payment.application.port.out.*;
 import io.order.backend.payment.domain.Payment;
+import io.order.backend.payment.domain.TransactionRef;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
@@ -22,12 +24,12 @@ public class PaymentCallbackService implements PaymentCallbackUseCase, RecordPay
     public NotificationResult ipn(PaymentNotification notification) {
         if (!notification.signatureValid())
             return NotificationResult.INVALID_SIGNATURE;
-        var found = store.byReference(notification.transactionReference());
+        var found = store.byReference(TransactionRef.of(notification.transactionReference()));
         if (found.isEmpty())
             return NotificationResult.NOT_FOUND;
         if (!matches(found.get(), notification))
             return NotificationResult.INVALID_DATA;
-        orders.lockForCallback(found.get().getOrderIdentifier());
+        orders.lockForCallback(found.get().getOrderId());
         var p = store.lock(found.get().getId());
         if (p.getStatus() == Payment.Status.SUCCEEDED) {
             if (notification.successful() && !Objects.equals(p.getProviderTransactionNo(), notification.providerTransactionNo()))
@@ -43,7 +45,7 @@ public class PaymentCallbackService implements PaymentCallbackUseCase, RecordPay
     public ReturnView returnView(PaymentNotification notification) {
         if (!notification.signatureValid())
             return new ReturnView(false, "INVALID", null);
-        var p = store.byReference(notification.transactionReference());
+        var p = store.byReference(TransactionRef.of(notification.transactionReference()));
         if (p.isEmpty() || !matches(p.get(), notification))
             return new ReturnView(false, "INVALID", null);
         return new ReturnView(true, p.get().getStatus().name(),
@@ -61,12 +63,12 @@ public class PaymentCallbackService implements PaymentCallbackUseCase, RecordPay
     }
 
     private void emit(String type, Payment p) {
-        outbox.enqueue(type, p.getId(),
-                json.writeValueAsString(new PaymentEvent(p.getOrderId(), p.getId(), p.getAmount(), p.getCurrency())));
+        outbox.enqueue(type, p.getId().toString(),
+                json.writeValueAsString(new PaymentEvent(p.getOrderId().toString(), p.getId().toString(), p.getAmount(), p.getCurrency())));
     }
 
     private static boolean matches(Payment payment, PaymentNotification notification) {
-        return notification.dataValid() && payment.getTransactionRef().equals(notification.transactionReference())
+        return notification.dataValid() && payment.getTransactionRef().toString().equals(notification.transactionReference())
                 && notification.amount() != null && payment.getAmount().compareTo(notification.amount()) == 0
                 && payment.getCurrency().equals(notification.currency());
     }

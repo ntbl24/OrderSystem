@@ -1,8 +1,11 @@
 package io.order.backend.payment.infrastructure.web.controller;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.common.response.ApiResponse;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.payment.application.port.in.*;
+import io.order.backend.payment.domain.PaymentId;
 import io.order.backend.payment.infrastructure.web.dto.PaymentResponse;
 import io.order.backend.payment.infrastructure.web.dto.CreatePaymentRequest;
 import io.order.backend.payment.infrastructure.web.dto.RefundPaymentRequest;
@@ -31,14 +34,14 @@ public class PaymentController {
 
     @GetMapping("/{id}")
     public ApiResponse<PaymentResponse> get(@PathVariable String id) {
-        return ApiResponse.success(PaymentResponse.from(queries.get(id)));
+        return ApiResponse.success(PaymentResponse.from(queries.get(PaymentId.of(id))));
     }
 
     @PostMapping({ "/{id}/refunds", "/{id}/refund" })
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PaymentResponse>> refund(@PathVariable String id,
             @RequestHeader("Idempotency-Key") String key, @Valid @RequestBody RefundPaymentRequest request) {
-        return ResponseEntity.accepted().body(ApiResponse.success(PaymentResponse.from(refunds.refund(id, validKey(key), request.reason()))));
+        return ResponseEntity.accepted().body(ApiResponse.success(PaymentResponse.from(refunds.refund(PaymentId.of(id), validKey(key), request.reason()))));
     }
 
     @RequestMapping(value = "/{id}", method = { RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE })
@@ -48,7 +51,7 @@ public class PaymentController {
 
     private static String validKey(String key) {
         if (key == null || key.isBlank() || key.length() > 128)
-            throw new IllegalArgumentException("Invalid idempotency key");
+            throw new AppException(ErrorCode.INVALID_INPUT,"Invalid idempotency key");
         return key;
     }
 

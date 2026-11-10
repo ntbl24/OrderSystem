@@ -1,5 +1,7 @@
 package io.order.backend.cart.domain;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.product.domain.ProductId;
 import io.order.backend.user.domain.UserId;
 import java.math.BigDecimal;
@@ -59,7 +61,7 @@ public class Cart {
             }
         }
         if (items.size() >= 100)
-            throw new IllegalArgumentException("Too many cart items");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Too many cart items");
         items.add(replacement);
         calculateTotals();
     }

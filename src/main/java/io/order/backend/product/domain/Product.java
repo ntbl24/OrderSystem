@@ -3,6 +3,9 @@ package io.order.backend.product.domain;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
+
 public class Product {
     private ProductId id;
     private boolean deleted;
@@ -59,20 +62,20 @@ public class Product {
         if (sellerId == null || sellerId.isBlank() || price == null || price.signum() <= 0
                 || price.stripTrailingZeros().scale() > 0 || price.precision() > 19
                 || stock < 0 || reserved < 0 || reserved > stock) {
-            throw new IllegalArgumentException("Invalid product, integer VND price or inventory");
+            throw new AppException(ErrorCode.INVALID_INPUT,"Invalid product, integer VND price or inventory");
         }
     }
 
     public void reserve(int quantity) {
         if (quantity < 1 || stock - reserved < quantity) {
-            throw new IllegalStateException("Insufficient stock");
+            throw new AppException(ErrorCode.INVALID_INPUT,"Insufficient stock");
         }
         reserved = Math.addExact(reserved, quantity);
     }
 
     public void release(int quantity) {
         if (quantity < 1 || reserved < quantity) {
-            throw new IllegalStateException("Invalid stock release");
+            throw new AppException(ErrorCode.INVALID_INPUT,"Invalid stock release");
         }
         reserved -= quantity;
     }
@@ -84,19 +87,19 @@ public class Product {
 
     public void restock(int quantity) {
         if (quantity < 1) {
-            throw new IllegalArgumentException("Invalid quantity");
+            throw new AppException(ErrorCode.INVALID_INPUT,"Invalid quantity");
         }
         stock = Math.addExact(stock, quantity);
     }
 
     public void replaceDetails(ProductDetails details) {
-        if (reserved > 0 && !Objects.equals(this.sellerId, sellerId)) {
-            throw new IllegalStateException("Cannot change seller with reserved stock");
+        if (reserved > 0 && !Objects.equals(this.sellerId, details.sellerId())) {
+            throw new AppException(ErrorCode.BAD_REQUEST,"Cannot change seller with reserved stock");
         }
         Product replacement = new Product();
-        replacement.sellerId = sellerId;
-        replacement.price = price;
-        replacement.stock = stock;
+        replacement.sellerId = details.sellerId();
+        replacement.price = details.price();
+        replacement.stock = details.stock();
         replacement.reserved = reserved;
         replacement.validate();
 
@@ -111,7 +114,7 @@ public class Product {
 
     public void updateStock(int quantity) {
         if (quantity < reserved || quantity < 0) {
-            throw new IllegalArgumentException("Invalid product, integer VND price or inventory");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid product, integer VND price or inventory");
         }
         stock = quantity;
         validate();

@@ -3,6 +3,8 @@ package io.order.backend.payment.application.usecase;
 import io.order.backend.payment.application.port.in.RefundIntentUseCase;
 import io.order.backend.payment.application.port.out.PayableOrderPort;
 import io.order.backend.payment.application.port.out.PaymentRepository;
+import io.order.backend.payment.domain.PaymentId;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,8 +19,8 @@ public class RefundIntentService implements RefundIntentUseCase {
 
     @Override
     public void acknowledge(String paymentId) {
-        var payment = store.find(paymentId).orElseThrow();
-        orders.lockForCallback(payment.getOrderIdentifier());
+        var payment = store.find(PaymentId.of(paymentId)).orElseThrow();
+        orders.lockForCallback(payment.getOrderId());
         store.lock(payment.getId());
         // The outbox dispatcher owns the transaction; intent and work state are already durable.
     }

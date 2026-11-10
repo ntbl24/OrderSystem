@@ -1,6 +1,7 @@
 package io.order.backend.shipping.application.usecase;
 
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.shipping.application.port.in.ShipmentCommand;
 import io.order.backend.shipping.application.port.in.UpdateShipmentUseCase;
 import io.order.backend.shipping.application.port.out.ShipmentRepository;
@@ -24,7 +25,7 @@ public class UpdateShipmentService implements UpdateShipmentUseCase {
     @Transactional
     public Shipment updateShipment(ShipmentId id, ShipmentCommand command) {
         Shipment existingShipment = shipmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
         ShipmentDetails details = ShipmentCommandMapper.toDetails(command);
 
@@ -36,7 +37,7 @@ public class UpdateShipmentService implements UpdateShipmentUseCase {
     @Transactional 
     public Shipment updateShipmentStatus(ShipmentId id, String status) {
         Shipment shipment = shipmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         
         shipment.updateStatus(status, LocalDateTime.now());
         shipment = shipmentRepository.save(shipment);
@@ -47,7 +48,7 @@ public class UpdateShipmentService implements UpdateShipmentUseCase {
     @Transactional
     public Shipment updateTrackingInfo(ShipmentId id, String trackingNumber, String status) {
         Shipment shipment = shipmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Shipment not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         shipment.updateTracking(TrackingNumber.of(trackingNumber), status, LocalDateTime.now());
         shipment = shipmentRepository.save(shipment);
         

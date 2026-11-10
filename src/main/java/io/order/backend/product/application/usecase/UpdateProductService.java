@@ -1,6 +1,7 @@
 package io.order.backend.product.application.usecase;
 
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.product.application.port.in.ProductCommand;
 import io.order.backend.product.application.port.in.UpdateProductUseCase;
 import io.order.backend.product.application.port.out.ProductRepository;
@@ -20,7 +21,7 @@ public class UpdateProductService implements UpdateProductUseCase {
     @Transactional
     public Product updateProduct(ProductId id, ProductCommand command) {
         Product existingProduct = productRepository.lockById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
         ProductDetails details = ProductCommandMapper.toDetails(command);
 
@@ -32,7 +33,7 @@ public class UpdateProductService implements UpdateProductUseCase {
     @Transactional
     public void updateStock(ProductId id, int quantity) {
         Product product = productRepository.lockById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         product.updateStock(quantity);
         productRepository.save(product);
     }

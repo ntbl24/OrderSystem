@@ -1,6 +1,8 @@
 package io.order.backend.common.domain.idempotency;
 
-import io.order.backend.common.exception.ConflictException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
+
 import java.nio.charset.StandardCharsets;
 
 public final class IdempotencyRecord {
@@ -22,20 +24,20 @@ public final class IdempotencyRecord {
 
     public void complete(String responseBody) {
         if (this.responseBody != null) {
-            throw new IllegalStateException("Request is already completed");
+            throw new AppException(ErrorCode.CONFLICT, "Request is already completed");
         }
         if (responseBody.getBytes(StandardCharsets.UTF_8).length > 262144) {
-            throw new IllegalArgumentException("Idempotent response exceeds storage limit");
+            throw new AppException(ErrorCode.BAD_REQUEST, ("Idempotent response exceeds storage limit"));
         }
         this.responseBody = responseBody;
     }
 
     public String replay(String requestHash) {
         if (!this.requestHash.equals(requestHash)) {
-            throw new ConflictException("Idempotency key was used with another request");
+            throw new AppException(ErrorCode.IDEMPOTENCY_CONFLICT, "Idempotency key was used with another request");
         }
         if (responseBody == null) {
-            throw new ConflictException("Request is still in progress");
+            throw new AppException(ErrorCode.CONFLICT, "Request is still in progress");
         }
         return responseBody;
     }

@@ -1,6 +1,7 @@
 package io.order.backend.product.application.usecase;
 
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.product.application.port.in.ProductQueryUseCase;
 import io.order.backend.product.application.port.out.ProductRepository;
 import io.order.backend.product.domain.Product;
@@ -21,13 +22,13 @@ public class ProductQueryService implements ProductQueryUseCase {
     @Override
     public Product getProductById(ProductId id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
     @Override
     public Product getProductBySku(String sku) {
         return productRepository.findBySku(sku)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with sku: " + sku));
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
     @Override

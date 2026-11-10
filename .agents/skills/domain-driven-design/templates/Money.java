@@ -5,6 +5,9 @@ import java.math.RoundingMode;
 import java.util.Currency;
 import java.util.Objects;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
+
 /**
  * Value object representing monetary amount with currency.
  * Immutable — all operations return new instances.
@@ -17,7 +20,7 @@ public record Money(BigDecimal amount, Currency currency) {
         Objects.requireNonNull(amount, "Amount must not be null");
         Objects.requireNonNull(currency, "Currency must not be null");
         if (amount.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException("Amount cannot be negative: " + amount);
+            throw new AppException(ErrorCode.INVALID_INPUT, "Amount cannot be negative: " + amount);
         amount = amount.setScale(2, RoundingMode.HALF_UP);
     }
 
@@ -42,7 +45,7 @@ public record Money(BigDecimal amount, Currency currency) {
         assertSameCurrency(other);
         BigDecimal result = amount.subtract(other.amount);
         if (result.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException("Result would be negative");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Result would be negative");
         return new Money(result, currency);
     }
 
@@ -57,7 +60,7 @@ public record Money(BigDecimal amount, Currency currency) {
 
     private void assertSameCurrency(Money other) {
         if (!currency.equals(other.currency))
-            throw new IllegalArgumentException(
+            throw new AppException(ErrorCode.INVALID_INPUT,
                 "Currency mismatch: %s vs %s".formatted(currency, other.currency));
     }
 

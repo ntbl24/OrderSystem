@@ -3,6 +3,8 @@ package io.order.backend.checkout.application.usecase;
 import io.order.backend.checkout.application.port.in.CheckoutCommand;
 import io.order.backend.common.application.port.CurrentBuyerPort;
 import io.order.backend.common.application.port.IdempotencyPort;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.checkout.application.port.in.CheckoutUseCase;
 import io.order.backend.checkout.application.port.out.InventoryPort;
 import io.order.backend.checkout.application.port.out.PlaceOrderPort;
@@ -31,11 +33,11 @@ public class CheckoutService implements CheckoutUseCase {
     private Order create(String owner, CheckoutCommand request) {
         if (request.items() == null || request.items().isEmpty() || request.items().size() > 100
                 || request.shippingAddress() == null || request.shippingAddress().isBlank())
-            throw new IllegalArgumentException("Invalid checkout");
+            throw new AppException(ErrorCode.INVALID_INPUT);
         Map<String, Integer> quantities = new TreeMap<>();
         for (var line : request.items()) {
             if (line.quantity() < 1 || line.quantity() > 100000)
-                throw new IllegalArgumentException("Invalid quantity");
+                throw new AppException(ErrorCode.INVALID_INPUT, "Invalid quantity");
             quantities.merge(line.productId(), line.quantity(), Math::addExact);
         }
         var locked = inventory.reserve(quantities);

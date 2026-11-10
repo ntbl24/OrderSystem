@@ -1,12 +1,18 @@
 package io.order.backend.checkout;
 
-import io.order.backend.checkout.application.usecase.CheckoutService;
-import io.order.backend.checkout.application.port.out.InventoryPort;
-import io.order.backend.checkout.application.port.out.PlaceOrderPort;
-import io.order.backend.checkout.application.port.in.CheckoutCommand;
-import io.order.backend.common.application.port.CurrentBuyerPort;
-import io.order.backend.common.application.port.IdempotencyPort;
-import io.order.backend.order.application.port.in.OrderResult;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,35 +20,47 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+
+import io.order.backend.checkout.application.port.in.CheckoutCommand;
+import io.order.backend.checkout.application.port.out.InventoryPort;
+import io.order.backend.checkout.application.port.out.PlaceOrderPort;
+import io.order.backend.checkout.application.usecase.CheckoutService;
+import io.order.backend.common.application.port.CurrentBuyerPort;
+import io.order.backend.common.application.port.IdempotencyPort;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.order.domain.Order;
+import io.order.backend.product.domain.ProductId;
 
 @ExtendWith(MockitoExtension.class)
 class CheckoutServiceTest {
-    @Mock CurrentBuyerPort buyer;
-    @Mock IdempotencyPort idempotency;
-    @Mock InventoryPort inventory;
-    @Mock PlaceOrderPort orders;
-    @InjectMocks CheckoutService checkout;
+    @Mock
+    CurrentBuyerPort buyer;
+    @Mock
+    IdempotencyPort idempotency;
+    @Mock
+    InventoryPort inventory;
+    @Mock
+    PlaceOrderPort orders;
+
+    @InjectMocks
+    CheckoutService checkout;
 
     @BeforeEach
-    void executeAction() {
+    void configureIdempotency() {
         when(buyer.buyerId()).thenReturn("buyer");
-        when(idempotency.execute(eq("buyer"), eq("CHECKOUT"), eq("key"), any(), eq(OrderResult.class), any()))
+        when(idempotency.execute(eq("buyer"), eq("CHECKOUT"), eq("key"), any(), eq(Order.class), any()))
                 .thenAnswer(call -> ((Supplier<?>) call.getArgument(5)).get());
     }
 
     @Test
-    void checkout_duplicateItems_aggregatesReservationAndUsesSnapshotPrice() {
-        var request = new CheckoutCommand(List.of(new CheckoutCommand.Item("p", 1), new CheckoutCommand.Item("p", 2)), "address", "notes");
+    void checkout_whenDuplicateItems_aggregatesReservationAndUsesSnapshotPrice() {
+        var request = new CheckoutCommand(
+                List.of(new CheckoutCommand.Item("p", 1), new CheckoutCommand.Item("p", 2)),
+                "address", "notes");
         when(inventory.reserve(Map.of("p", 3))).thenReturn(Map.of("p",
-                new InventoryPort.ProductSnapshot("p", "seller", "Product", "sku", new BigDecimal("100000"))));
-        var expected = new OrderResult();
+                new InventoryPort.ProductSnapshot(ProductId.of("p"), "seller", "Product", "sku",
+                        new BigDecimal("100000"))));
+        var expected = org.mockito.Mockito.mock(Order.class);
         when(orders.place(any())).thenReturn(expected);
 
         assertThat(checkout.checkout("key", request)).isSameAs(expected);
@@ -58,14 +76,27 @@ class CheckoutServiceTest {
     }
 
     @Test
-    void checkout_mixedSellers_doesNotPlaceOrder() {
-        var request = new CheckoutCommand(List.of(new CheckoutCommand.Item("a", 1), new CheckoutCommand.Item("b", 1)), "address", null);
+    void checkout_whenSellersDiffer_doesNotPlaceOrder() {
+        var request = new CheckoutCommand(
+                List.of(new CheckoutCommand.Item("a", 1), new CheckoutCommand.Item("b", 1)),
+                "address", null);
         when(inventory.reserve(any())).thenReturn(Map.of(
-                "a", new InventoryPort.ProductSnapshot("a", "one", "A", "a", BigDecimal.TEN),
-                "b", new InventoryPort.ProductSnapshot("b", "two", "B", "b", BigDecimal.TEN)));
+                "a", new InventoryPort.ProductSnapshot(ProductId.of("a"), "one", "A", "a", BigDecimal.TEN),
+                "b", new InventoryPort.ProductSnapshot(ProductId.of("b"), "two", "B", "b", BigDecimal.TEN)));
 
-        assertThatThrownBy(() -> checkout.checkout("key", request)).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> checkout.checkout("key", request))
+                .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Checkout requires one seller");
         verifyNoInteractions(orders);
+    }
+
+    @Test
+    void checkout_whenQuantityInvalid_rejectsBeforeReservingInventory() {
+        var request = new CheckoutCommand(List.of(new CheckoutCommand.Item("p", 0)), "address", null);
+
+        assertThatThrownBy(() -> checkout.checkout("key", request))
+                .isInstanceOf(AppException.class)
+                .hasMessage("Invalid quantity");
+        verifyNoInteractions(inventory, orders);
     }
 }

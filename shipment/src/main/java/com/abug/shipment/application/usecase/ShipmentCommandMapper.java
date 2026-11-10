@@ -1,0 +1,80 @@
+package com.abug.shipment.application.usecase;
+
+import com.abug.shipment.application.port.in.ShipmentCommand;
+import com.abug.shipment.domain.Shipment;
+import com.abug.shipment.domain.ShipmentDetails;
+
+final class ShipmentCommandMapper {
+    private ShipmentCommandMapper() {}
+
+    static Shipment toDomain(ShipmentCommand command) {
+        Shipment result = Shipment.create(
+            command.orderId(),
+            command.userId(),
+            command.trackingNumber(),
+            command.carrier(),
+            command.serviceType(),
+            command.weight(),
+            command.weightUnit(),
+            command.shippingCost(),
+            command.status(),
+            command.estimatedDeliveryDate(),
+            command.actualDeliveryDate(),
+            command.originAddress(),
+            command.originCity(),
+            command.originState(),
+            command.originCountry(),
+            command.originPostalCode(),
+            command.destinationAddress(),
+            command.destinationCity(),
+            command.destinationState(),
+            command.destinationCountry(),
+            command.destinationPostalCode(),
+            command.notes(),
+            command.labelUrl(),
+            command.returnLabelUrl(),
+            command.signatureRequired(),
+            command.insuranceRequired(),
+            command.declaredValue(),
+            command.customsInfo(),
+            command.customsValue(),
+            command.customsCurrency()
+        );
+        return result;
+    }
+
+     static ShipmentDetails toDetails(ShipmentCommand command) {
+        return new ShipmentDetails(
+            command.orderId(),
+            command.userId(),
+            command.trackingNumber(),
+            command.carrier(),
+            command.serviceType(),
+            command.weight(),
+            command.weightUnit(),
+            command.shippingCost(),
+            command.status(),
+            command.estimatedDeliveryDate(),
+            command.actualDeliveryDate(),
+            command.originAddress(),
+            command.originCity(),
+            command.originState(),
+            command.originCountry(),
+            command.originPostalCode(),
+            command.destinationAddress(),
+            command.destinationCity(),
+            command.destinationState(),
+            command.destinationCountry(),
+            command.destinationPostalCode(),
+            command.notes(),
+            command.labelUrl(),
+            command.returnLabelUrl(),
+            command.signatureRequired(),
+            command.insuranceRequired(),
+            command.declaredValue(),
+            command.customsInfo(),
+            command.customsValue(),
+            command.customsCurrency()
+        );
+    }
+}

@@ -1,6 +1,7 @@
 package io.order.backend.product.application.usecase;
 
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.product.application.port.in.ProductCommand;
 import io.order.backend.product.application.port.in.CreateProductUseCase;
 import io.order.backend.product.application.port.out.ProductRepository;
@@ -18,7 +19,7 @@ public class CreateProductService implements CreateProductUseCase {
     @Transactional
     public Product createProduct(ProductCommand command) {
         if (productRepository.existsBySku(command.sku())) {
-            throw new ResourceNotFoundException("Product with SKU " + command.sku() + " already exists");
+            throw new AppException(ErrorCode.PRODUCT_EXISTED, "Product with SKU " + command.sku() + " already exists");
         }
         Product product = ProductCommandMapper.toDomain(command);
         return productRepository.save(product);

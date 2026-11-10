@@ -1,7 +1,8 @@
 package io.order.backend.order.application.usecase;
 
 import io.order.backend.common.application.port.CurrentBuyerPort;
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.order.application.port.out.InventoryPort;
 import io.order.backend.order.application.port.in.OrderUseCase;
 import io.order.backend.order.domain.Order;
@@ -25,28 +26,28 @@ public class OrderService implements OrderUseCase {
 
     private Order owned(Order order) {
         if (!buyer.buyerId().equals(order.getUserId().toString()))
-            throw new ResourceNotFoundException("Order not found");
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
         return order;
     }
 
     public Order getOrderById(OrderId id) {
-        return owned(orders.findById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found")));
+        return owned(orders.findById(id).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND)));
     }
 
     public Order getOrderByOrderNumber(OrderNumber number) {
         return owned(
-                orders.findByOrderNumber(number).orElseThrow(() -> new ResourceNotFoundException("Order not found")));
+                orders.findByOrderNumber(number).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND)));
     }
 
     public List<Order> getOrdersByUserId(UserId userId) {
         if (!buyer.buyerId().equals(userId.toString()))
-            throw new ResourceNotFoundException("Orders not found");
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
         return orders.findByUserId(userId);
     }
 
     @Transactional
     public Order cancel(OrderId id) {
-        Order order = owned(orders.lockById(id).orElseThrow(() -> new ResourceNotFoundException("Order not found")));
+        Order order = owned(orders.lockById(id).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND)));
         order.cancel();
         InventorySettlement.settle(order, inventory, "RELEASED");
         return orders.save(order);

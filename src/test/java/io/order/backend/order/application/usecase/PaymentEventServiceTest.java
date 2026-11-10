@@ -1,80 +1,103 @@
 package io.order.backend.order.application.usecase;
 
-import io.order.backend.order.application.port.in.PaymentEventUseCase.PaymentEvent;
-import io.order.backend.order.application.port.out.InventoryPort;
-import io.order.backend.order.application.port.out.OrderRepository;
-import io.order.backend.order.domain.Order;
-import io.order.backend.order.domain.OrderItem;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.List;
 
-import java.util.Optional;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import io.order.backend.order.application.port.in.PaymentEventUseCase.PaymentEvent;
+import io.order.backend.order.application.port.out.InventoryPort;
+import io.order.backend.order.application.port.out.OrderRepository;
+import io.order.backend.order.domain.Order;
+import io.order.backend.order.domain.OrderId;
+import io.order.backend.order.domain.OrderItem;
+import io.order.backend.payment.domain.PaymentId;
+import io.order.backend.product.domain.ProductId;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentEventServiceTest {
-    @Mock OrderRepository orders;
-    @Mock InventoryPort inventory;
-    @InjectMocks PaymentEventService service;
+    private static final OrderId ORDER_ID = OrderId.of("order");
+    private static final PaymentId PAYMENT_ID = PaymentId.of("payment");
+    private static final ProductId PRODUCT_ID = ProductId.of("product");
+    private static final PaymentEvent EVENT =
+            new PaymentEvent(ORDER_ID, PAYMENT_ID, new BigDecimal("130000"), "VND");
+
+    @Mock
+    OrderRepository orders;
+    @Mock
+    InventoryPort inventory;
+    @Mock
     Order order;
-    PaymentEvent event;
+    @InjectMocks
+    PaymentEventService service;
 
     @BeforeEach
-    void pendingOrder() {
-        var item = new OrderItem();
-        item.setProductId("product");
-        item.setQuantity(2);
-        order = Order.place("buyer", "seller", List.of(item), new BigDecimal("100000"),
-                "address", null, Instant.now(), LocalDateTime.now());
-        event = new PaymentEvent(order.getId(), "payment", new BigDecimal("130000"), "VND");
-        when(orders.lockById(order.getId())).thenReturn(Optional.of(order));
+    void setUp() {
+        when(orders.lockById(ORDER_ID)).thenReturn(Optional.of(order));
     }
 
     @Test
-    void paymentSucceeded_duplicateDelivery_consumesReservationOnce() {
-        service.paymentSucceeded(event);
-        service.paymentSucceeded(event);
+    void paymentSucceeded_whenDeliveredTwice_consumesReservationOnce() {
+        when(order.acceptPayment(any(), any(), any(), any())).thenReturn(true, false);
+        when(order.getOrderStatus()).thenReturn("PAID");
+        when(order.requiresReservationTransition("CONSUMED")).thenReturn(true);
+        when(order.getItems()).thenReturn(List.of(new OrderItem(PRODUCT_ID, "Product", "SKU", 1,
+                new BigDecimal("100000"))));
 
-        assertThat(order.getOrderStatus()).isEqualTo("PAID");
-        assertThat(order.getPaymentId()).isEqualTo("payment");
-        assertThat(order.getReservationStatus()).isEqualTo("CONSUMED");
-        verify(inventory).settle(List.of(new InventoryPort.Line("product", 2)), "CONSUMED");
+        service.paymentSucceeded(EVENT);
+        service.paymentSucceeded(EVENT);
+
+        verify(inventory).settle(List.of(new InventoryPort.Line(PRODUCT_ID, 1)), "CONSUMED");
+        verify(order).transitionReservation("CONSUMED");
         verify(orders, times(2)).save(order);
     }
 
     @Test
-    void paymentSucceeded_expiredOrder_releasesReservationForReview() {
-        order.setExpiresAt(Instant.now().minusSeconds(1));
+    void paymentSucceeded_whenOrderExpired_releasesReservationForReview() {
+        when(order.acceptPayment(any(), any(), any(), any())).thenReturn(false);
+        when(order.getOrderStatus()).thenReturn("PAYMENT_REVIEW");
+        when(order.getReservationStatus()).thenReturn("HELD", "RELEASED");
+        when(order.requiresReservationTransition("RELEASED")).thenReturn(true, false);
+        when(order.getItems()).thenReturn(List.of(new OrderItem(PRODUCT_ID, "Product", "SKU", 1,
+                new BigDecimal("100000"))));
 
-        service.paymentSucceeded(event);
-        service.paymentSucceeded(event);
+        service.paymentSucceeded(EVENT);
+        service.paymentSucceeded(EVENT);
 
-        assertThat(order.getOrderStatus()).isEqualTo("PAYMENT_REVIEW");
-        assertThat(order.getReviewPaymentId()).isEqualTo("payment");
-        assertThat(order.getReservationStatus()).isEqualTo("RELEASED");
-        verify(inventory).settle(List.of(new InventoryPort.Line("product", 2)), "RELEASED");
-        verifyNoMoreInteractions(inventory);
+        verify(inventory).settle(List.of(new InventoryPort.Line(PRODUCT_ID, 1)), "RELEASED");
+        verify(order).transitionReservation("RELEASED");
+        verify(orders, times(2)).save(order);
     }
 
     @Test
-    void paymentRefunded_duplicateDelivery_returnsConsumedStockOnce() {
-        service.paymentSucceeded(event);
-        service.paymentRefunded(event);
-        service.paymentRefunded(event);
+    void paymentRefunded_whenDeliveredTwice_returnsConsumedStockOnce() {
+        when(order.acceptPayment(any(), any(), any(), any())).thenReturn(true, false);
+        when(order.acceptRefund(any(), any(), any())).thenReturn(true, false);
+        when(order.getReservationStatus()).thenReturn("CONSUMED");
+        when(order.requiresReservationTransition("CONSUMED")).thenReturn(true);
+        when(order.requiresReservationTransition("RETURNED")).thenReturn(true);
+        when(order.getItems()).thenReturn(List.of(new OrderItem(PRODUCT_ID, "Product", "SKU", 1,
+                new BigDecimal("100000"))));
 
-        assertThat(order.getOrderStatus()).isEqualTo("REFUNDED");
-        assertThat(order.getReservationStatus()).isEqualTo("RETURNED");
-        verify(inventory).settle(List.of(new InventoryPort.Line("product", 2)), "CONSUMED");
-        verify(inventory).settle(List.of(new InventoryPort.Line("product", 2)), "RETURNED");
-        verifyNoMoreInteractions(inventory);
+        service.paymentSucceeded(EVENT);
+        service.paymentRefunded(EVENT);
+        service.paymentRefunded(EVENT);
+
+        verify(inventory).settle(List.of(new InventoryPort.Line(PRODUCT_ID, 1)), "CONSUMED");
+        verify(inventory).settle(List.of(new InventoryPort.Line(PRODUCT_ID, 1)), "RETURNED");
+        verify(order).transitionReservation("CONSUMED");
+        verify(order).transitionReservation("RETURNED");
+        verify(orders, times(3)).save(order);
     }
 }

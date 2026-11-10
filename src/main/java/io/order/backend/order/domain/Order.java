@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.payment.domain.PaymentId;
 import io.order.backend.product.domain.ProductId;
 import io.order.backend.user.domain.UserId;
@@ -91,7 +93,7 @@ public class Order {
             }
         }
         if (items.size() >= 100)
-            throw new IllegalArgumentException("Too many cart items");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Too many cart items");
         items.add(replacement);
         calculateTotals();
     }
@@ -150,7 +152,7 @@ public class Order {
             return false;
         if (!("HELD".equals(reservationStatus) && ("RELEASED".equals(target) || "CONSUMED".equals(target)))
                 && !("CONSUMED".equals(reservationStatus) && "RETURNED".equals(target)))
-            throw new IllegalStateException("Invalid inventory transition");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid inventory transition");
         return true;
     }
 
@@ -173,7 +175,7 @@ public class Order {
 
     public void cancel() {
         if (!unpaid())
-            throw new IllegalStateException("Only unpaid orders can be cancelled");
+            throw new AppException(ErrorCode.CONFLICT, "Only unpaid orders can be cancelled");
         orderStatus = "CANCELLED";
     }
 
@@ -186,7 +188,7 @@ public class Order {
 
     public boolean acceptPayment(PaymentId id, BigDecimal amount, String currency, Instant now) {
         if (id == null)
-            throw new IllegalArgumentException("Payment ID required");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Payment ID required");
         if (id.equals(paymentId))
             return false;
         if (!"VND".equals(currency) || amount == null || amount.compareTo(getTotal()) != 0
@@ -204,7 +206,7 @@ public class Order {
 
     public boolean acceptRefund(PaymentId id, BigDecimal amount, String currency) {
         if (!"VND".equals(currency) || amount == null || amount.compareTo(getTotal()) != 0)
-            throw new IllegalStateException("Refund amount or currency mismatch");
+            throw new AppException(ErrorCode.BAD_REQUEST, "Refund amount or currency mismatch");
         if (!id.equals(paymentId) || "REFUNDED".equals(paymentStatus))
             return false;
         paymentStatus = "REFUNDED";

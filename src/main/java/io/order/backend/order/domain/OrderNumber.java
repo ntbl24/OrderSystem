@@ -2,11 +2,14 @@ package io.order.backend.order.domain;
 
 import java.util.Objects;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
+
 public record OrderNumber(String value) {
     public OrderNumber {
         Objects.requireNonNull(value, "Order number cannot be null");
         if (value.isBlank()) {
-            throw new IllegalArgumentException("Order number cannot be blank");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Order number cannot be blank");
         }
     }
 

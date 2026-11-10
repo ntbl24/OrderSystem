@@ -6,6 +6,8 @@ import io.order.backend.cart.application.port.in.UpdateCartUseCase;
 import io.order.backend.cart.application.port.out.CartRepository;
 import io.order.backend.cart.domain.Cart;
 import io.order.backend.cart.domain.CartId;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.product.domain.ProductId;
 import io.order.backend.user.domain.UserId;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +40,7 @@ public class UpdateCartService implements UpdateCartUseCase {
 
     public Cart updateItemQuantity(UserId userId, ProductId productId, int quantity) {
         if (quantity < 0 || quantity > 100000)
-            throw new IllegalArgumentException("Invalid quantity");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid quantity");
         Cart cart = access.byUser(userId);
         if (quantity == 0) {
             cart.removeItem(productId);

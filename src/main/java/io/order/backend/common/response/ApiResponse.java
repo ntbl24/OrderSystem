@@ -2,32 +2,53 @@ package io.order.backend.common.response;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.order.backend.common.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor 
-@NoArgsConstructor 
+@NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
-    private boolean success;
+    private int code;
     private String message;
     private T data;
     private LocalDateTime timestamp;
 
+    @JsonProperty("success")
+    public boolean isSuccess() {
+        return this.code == 1000;
+    }
+
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, "Success", data, LocalDateTime.now());
+        return new ApiResponse<>(1000, "Success", data, LocalDateTime.now());
     }
 
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(true, message, data, LocalDateTime.now());
+        return new ApiResponse<>(1000, message, data, LocalDateTime.now());
+    }
+
+    public static <T> ApiResponse<T> error(int code, String message) {
+        return new ApiResponse<>(code, message, null, LocalDateTime.now());
+    }
+
+    public static <T> ApiResponse<T> error(int code, String message, T data) {
+        return new ApiResponse<>(code, message, data, LocalDateTime.now());
+    }
+
+    public static <T> ApiResponse<T> error(ErrorCode errorCode) {
+        return new ApiResponse<>(errorCode.getCode(), errorCode.getMessage(), null, LocalDateTime.now());
+    }
+
+    public static <T> ApiResponse<T> error(ErrorCode errorCode, String message) {
+        return new ApiResponse<>(errorCode.getCode(), message != null ? message : errorCode.getMessage(), null, LocalDateTime.now());
     }
 
     public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>(false, message, null, LocalDateTime.now());
-    }
-
-    public static <T> ApiResponse<T> error(String message, T data) {
-        return new ApiResponse<>(false, message, data, LocalDateTime.now());
+        return new ApiResponse<>(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode(), message, null, LocalDateTime.now());
     }
 }

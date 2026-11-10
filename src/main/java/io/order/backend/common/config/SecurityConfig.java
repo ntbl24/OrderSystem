@@ -1,5 +1,6 @@
 package io.order.backend.common.config;
 
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.common.response.ApiResponse;
 import java.util.ArrayList;
 import tools.jackson.databind.json.JsonMapper;
@@ -27,12 +28,12 @@ public class SecurityConfig {
         AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setStatus(401);
             response.setContentType("application/json");
-            json.writeValue(response.getOutputStream(), ApiResponse.error("Authentication required"));
+            json.writeValue(response.getOutputStream(), ApiResponse.error(ErrorCode.UNAUTHENTICATED));
         };
         AccessDeniedHandler forbidden = (request, response, exception) -> {
             response.setStatus(403);
             response.setContentType("application/json");
-            json.writeValue(response.getOutputStream(), ApiResponse.error("Access denied"));
+            json.writeValue(response.getOutputStream(), ApiResponse.error(ErrorCode.UNAUTHORIZED));
         };
         var scopes = new JwtGrantedAuthoritiesConverter();
         var converter = new JwtAuthenticationConverter();

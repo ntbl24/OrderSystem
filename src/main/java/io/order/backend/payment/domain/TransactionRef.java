@@ -3,11 +3,14 @@ package io.order.backend.payment.domain;
 import java.util.Objects;
 import java.util.UUID;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
+
 public record TransactionRef(String value) {
     public TransactionRef {
         Objects.requireNonNull(value, "Transaction ref cannot be null");
         if (value.isBlank()) {
-            throw new IllegalArgumentException("Transaction ref cannot be blank");
+            throw new AppException(ErrorCode.INVALID_INPUT,"Transaction ref cannot be blank");
         }
     }
 

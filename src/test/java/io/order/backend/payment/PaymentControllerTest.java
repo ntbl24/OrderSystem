@@ -6,6 +6,8 @@ import io.order.backend.payment.application.port.in.PaymentResult;
 import java.math.BigDecimal;
 import io.order.backend.payment.infrastructure.provider.VnPayCallbacks;
 import io.order.backend.payment.infrastructure.web.controller.VnPayCallbackController;
+import io.order.backend.payment.domain.PaymentId;
+import io.order.backend.order.domain.OrderId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +36,7 @@ class PaymentControllerTest {
     }
 
     private static PaymentResult result() {
-        return PaymentResult.from(PaymentDomainTest.pending(BigDecimal.TEN), "https://provider.test/pay");
+        return PaymentResult.from(PaymentTestFixtures.pending(BigDecimal.TEN), "https://provider.test/pay");
     }
 
     @Test void create_allAliases_preserveCreatedAndUseCaseArguments() throws Exception {
@@ -43,8 +45,8 @@ class PaymentControllerTest {
             mvc.perform(post("/api/v1/payments" + path).header("Idempotency-Key", "key")
                     .contentType(MediaType.APPLICATION_JSON).content("{\"orderId\":\"order\"}"))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.data.id").value("payment"))
-                    .andExpect(jsonPath("$.data.orderId").value("order"))
+                    .andExpect(jsonPath("$.data.id").value(PaymentId.of("payment").toString()))
+                    .andExpect(jsonPath("$.data.orderId").value(OrderId.of("order").toString()))
                     .andExpect(jsonPath("$.data.amount").value(10))
                     .andExpect(jsonPath("$.data.currency").value("VND"))
                     .andExpect(jsonPath("$.data.status").value("PENDING"))
@@ -55,19 +57,19 @@ class PaymentControllerTest {
     }
 
     @Test void refunds_bothAliases_preserveAccepted() throws Exception {
-        when(refunds.refund("payment", "key", "requested")).thenReturn(result());
+        when(refunds.refund(PaymentId.of("payment"), "key", "requested")).thenReturn(result());
         for (String suffix : List.of("/refunds", "/refund")) {
             mvc.perform(post("/api/v1/payments/payment" + suffix).header("Idempotency-Key", "key")
                     .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"requested\"}"))
                     .andExpect(status().isAccepted());
         }
-        verify(refunds, times(2)).refund("payment", "key", "requested");
+        verify(refunds, times(2)).refund(PaymentId.of("payment"), "key", "requested");
     }
 
     @Test void get_mapsApplicationResultToExistingJson() throws Exception {
-        when(payments.get("payment")).thenReturn(result());
+        when(payments.get(PaymentId.of("payment"))).thenReturn(result());
         mvc.perform(get("/api/v1/payments/payment"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value("payment"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.id").value(PaymentId.of("payment").toString()))
                 .andExpect(jsonPath("$.data.amount").value(10));
     }
 

@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.user.domain.UserId;
 
@@ -36,7 +38,7 @@ public final class Payment {
         Objects.requireNonNull(orderId);
         Objects.requireNonNull(buyerId);
         if (!"VND".equals(currency) || amount == null || amount.signum() <= 0)
-            throw new IllegalArgumentException("Positive VND amount required");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Positive VND amount required");
         amount = amount.setScale(0, java.math.RoundingMode.UNNECESSARY);
         Math.multiplyExact(amount.longValueExact(), 100L);
         this.id = id;
@@ -70,7 +72,7 @@ public final class Payment {
         Objects.requireNonNull(orderExpiresAt, "Order expiry is required");
         Instant expires = orderExpiresAt.isBefore(now.plusSeconds(900)) ? orderExpiresAt : now.plusSeconds(900);
         if (!expires.isAfter(now))
-            throw new IllegalStateException("Order expired");
+            throw new AppException(ErrorCode.BAD_REQUEST, "Order expired");
         return new Payment(PaymentId.generate(), orderId, buyerId, amount, currency,
                 TransactionRef.generate(), now, expires, Status.PENDING, null,
                 RefundStatus.NONE, null, null, null, null);
@@ -98,11 +100,11 @@ public final class Payment {
     public Payment observe(boolean success, String providerNo) {
         if (status == Status.SUCCEEDED) {
             if (success && !Objects.equals(providerTransactionNo, providerNo))
-                throw new IllegalArgumentException("Conflicting provider transaction");
+                throw new AppException(ErrorCode.CONFLICT, "Conflicting provider transaction");
             return this;
         }
         if (success && (providerNo == null || !providerNo.matches("[0-9]{1,32}") || "0".equals(providerNo)))
-            throw new IllegalArgumentException("Invalid provider transaction");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid provider transaction");
         status = success ? Status.SUCCEEDED : Status.FAILED;
         if (success) providerTransactionNo = providerNo;
         return this;
@@ -110,16 +112,16 @@ public final class Payment {
 
     public Payment requestRefund(String requestId, String actor, String reason, Instant now) {
         if (status != Status.SUCCEEDED)
-            throw new IllegalStateException("Only settled payments can be refunded");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Only settled payments can be refunded");
         if (refundStatus != RefundStatus.NONE)
             return this;
         if (requestId == null || requestId.isBlank() || requestId.length() > 32)
-            throw new IllegalArgumentException("Invalid refund request ID");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid refund request ID");
         if (actor == null || actor.isBlank())
-            throw new IllegalArgumentException("Invalid refund actor");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid refund actor");
         if (reason == null || reason.isBlank() || reason.length() > 255 || reason.contains("|")
                 || reason.contains("\n") || reason.contains("\r"))
-            throw new IllegalArgumentException("Invalid refund reason");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid refund reason");
         Objects.requireNonNull(now, "Refund creation time is required");
         refundStatus = RefundStatus.REQUESTED;
         refundRequestId = requestId;
@@ -138,7 +140,7 @@ public final class Payment {
             default -> false;
         };
         if (!allowed)
-            throw new IllegalStateException("Invalid refund transition");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid refund transition");
         refundStatus = next;
         return this;
     }

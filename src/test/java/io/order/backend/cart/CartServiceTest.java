@@ -5,7 +5,8 @@ import io.order.backend.cart.application.port.out.*;
 import io.order.backend.cart.application.usecase.*;
 import io.order.backend.cart.domain.*;
 import io.order.backend.common.application.port.CurrentBuyerPort;
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.product.domain.ProductId;
 import io.order.backend.user.domain.UserId;
 import java.math.BigDecimal;
@@ -58,7 +59,7 @@ class CartServiceTest {
         assertThat(cart.getShippingCost()).isZero();
         assertThat(cart.getItems().getFirst().getProductName()).isEqualTo("Catalog title");
         when(carts.findByUserId(user)).thenReturn(Optional.of(cart));
-        assertThatThrownBy(() -> creates.createCart(command)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> creates.createCart(command)).isInstanceOf(AppException.class);
     }
 
     @Test
@@ -103,7 +104,8 @@ class CartServiceTest {
         when(carts.findByUserId(user)).thenReturn(Optional.empty());
         when(products.findById(product)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> updates.addItemToCart(user, new CartItemData(product, 2)))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOfSatisfying(AppException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PRODUCT_NOT_FOUND));
         verify(carts, never()).save(any());
     }
 
@@ -112,11 +114,10 @@ class CartServiceTest {
         when(buyer.buyerId()).thenReturn(UserId.generate().value().toString());
         Cart cart = Cart.create(user);
         when(carts.findById(cart.getId())).thenReturn(Optional.of(cart));
-        assertThatThrownBy(() -> queries.getCartById(cart.getId())).isInstanceOf(ResourceNotFoundException.class);
-        assertThatThrownBy(() -> commands.deleteCart(cart.getId())).isInstanceOf(ResourceNotFoundException.class);
-        assertThatThrownBy(() -> commands.clearCart(user)).isInstanceOf(ResourceNotFoundException.class);
-        assertThatThrownBy(() -> updates.addItemToCart(user, new CartItemData(product, 1)))
-                .isInstanceOf(ResourceNotFoundException.class);
+        assertCartNotFound(() -> queries.getCartById(cart.getId()));
+        assertCartNotFound(() -> commands.deleteCart(cart.getId()));
+        assertCartNotFound(() -> commands.clearCart(user));
+        assertCartNotFound(() -> updates.addItemToCart(user, new CartItemData(product, 1)));
         verify(carts, never()).save(any());
         verify(carts, never()).deleteById(any());
         verify(carts, never()).deleteByUserId(any());
@@ -134,5 +135,10 @@ class CartServiceTest {
         commands.clearCart(user);
         verify(carts).deleteById(cart.getId());
         verify(carts).deleteByUserId(user);
+    }
+
+    private void assertCartNotFound(org.assertj.core.api.ThrowableAssert.ThrowingCallable action) {
+        assertThatThrownBy(action).isInstanceOfSatisfying(AppException.class,
+                exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.CART_NOT_FOUND));
     }
 }

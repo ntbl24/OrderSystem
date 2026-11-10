@@ -2,7 +2,8 @@ package io.order.backend.cart.application.usecase;
 
 import io.order.backend.cart.application.port.out.ProductCatalogPort;
 import io.order.backend.cart.domain.Cart;
-import io.order.backend.common.exception.ResourceNotFoundException;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.product.domain.ProductId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,7 @@ public class CartPricingService {
     private final ProductCatalogPort products;
 
     public ProductCatalogPort.Snapshot product(ProductId id) {
-        return products.findById(id).orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        return products.findById(id).orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
     }
 
     public void refresh(Cart cart) {

@@ -1,0 +1,32 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: identity_service
+          uri: https://localhost:8080
+          predicates:
+            - Path=/identity/**
+        - id: product-service
+          uri: https://localhost:8081
+          predicates:
+            - Path=/product/**
+        - id: cart-service
+          uri: https://localhost:8082
+          predicates:
+            - Path=/cart/**
+        - id: order-service
+          uri: https://localhost:8083
+          predicates:
+            - Path=/order/**
+        - id: payment-service
+          uri: https://localhost:8084
+          predicates:
+            - Path=/payment/**
+        - id: shipment-service
+          uri: https://localhost:8085
+          predicates:
+            - Path=/shipment/**

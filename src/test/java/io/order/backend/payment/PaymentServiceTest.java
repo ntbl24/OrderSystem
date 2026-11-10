@@ -2,10 +2,13 @@ package io.order.backend.payment;
 import io.order.backend.common.application.port.CurrentBuyerPort;
 import io.order.backend.common.application.port.IdempotencyPort;
 import io.order.backend.common.application.port.OutboxPort;
+import io.order.backend.common.exception.AppException;
 import io.order.backend.payment.application.usecase.*;
 import io.order.backend.payment.application.port.in.*;
 import io.order.backend.payment.application.port.out.*;
 import io.order.backend.payment.domain.Payment;
+import io.order.backend.payment.domain.PaymentId;
+import io.order.backend.payment.domain.TransactionRef;
 import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +20,8 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
+    private static final PaymentId PAYMENT_ID = PaymentId.of("payment");
+    private static final TransactionRef TRANSACTION_REF = TransactionRef.of("ref");
     @Mock CurrentBuyerPort buyer; @Mock IdempotencyPort keys; @Mock OutboxPort outbox;
     @Mock PayableOrderPort orders; @Mock PaymentRepository store; @Mock PaymentGateway gateway;
     CreatePaymentService create; PaymentQueryService query; RefundPaymentService refunds; PaymentCallbackService callbacks;
@@ -52,7 +57,7 @@ class PaymentServiceTest {
     }
     @Test void create_idempotencyReplay_returnsOriginalResultWithoutNewAttempt() {
         when(buyer.buyerId()).thenReturn("00000000-0000-0000-0000-000000000001");
-        var original = PaymentResult.from(PaymentDomainTest.pending(BigDecimal.TEN), "original-url");
+        var original = PaymentResult.from(PaymentTestFixtures.pending(BigDecimal.TEN), "original-url");
         when(keys.execute(eq("00000000-0000-0000-0000-000000000001"), eq("PAYMENT_ATTEMPT"), eq("key"),
                 eq(java.util.Map.of("orderId", io.order.backend.order.domain.OrderId.of("order").toString())), eq(PaymentResult.class), any())).thenReturn(original);
         assertThat(create.create(new CreatePaymentCommand(io.order.backend.order.domain.OrderId.of("order"), "key", "new-ip"))).isSameAs(original);
@@ -66,51 +71,52 @@ class PaymentServiceTest {
                 io.order.backend.order.domain.OrderId.of("order"), io.order.backend.user.domain.UserId.of("00000000-0000-0000-0000-000000000001"), BigDecimal.TEN, "VND", java.time.Instant.now().plusSeconds(300)));
         when(store.orderSettled(io.order.backend.order.domain.OrderId.of("order"))).thenReturn(true);
         executeIdempotentAction();
-        assertThatThrownBy(() -> create.create(new CreatePaymentCommand(io.order.backend.order.domain.OrderId.of("order"), "key", "ip"))).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> create.create(new CreatePaymentCommand(io.order.backend.order.domain.OrderId.of("order"), "key", "ip"))).isInstanceOf(AppException.class)
                 .hasMessage("Order already paid");
         verify(store, never()).save(any()); verifyNoInteractions(gateway, outbox);
     }
     @Test void get_otherBuyer_cannotReadPayment() {
         when(buyer.buyerId()).thenReturn("other");
-        when(store.find("payment")).thenReturn(Optional.of(PaymentDomainTest.pending(BigDecimal.TEN)));
-        assertThatThrownBy(() -> query.get("payment"))
+        when(store.find(PAYMENT_ID)).thenReturn(Optional.of(PaymentTestFixtures.pending(BigDecimal.TEN)));
+        assertThatThrownBy(() -> query.get(PAYMENT_ID))
                 .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
         verifyNoInteractions(gateway, outbox);
     }
     @Test void refund_settledPayment_persistsIntentBeforeOutboxWithoutProviderCall() {
-        var payment = PaymentDomainTest.pending(BigDecimal.TEN).observe(true, "123");
+        var payment = PaymentTestFixtures.pending(BigDecimal.TEN).observe(true, "123");
         when(buyer.buyerId()).thenReturn("admin");
-        when(store.find("payment")).thenReturn(Optional.of(payment));
-        when(store.lock("payment")).thenReturn(payment);
+        when(store.find(PAYMENT_ID)).thenReturn(Optional.of(payment));
+        when(store.lock(PAYMENT_ID)).thenReturn(payment);
         executeIdempotentAction();
-        var result = refunds.refund("payment", "key", "requested");
+        var result = refunds.refund(PAYMENT_ID, "key", "requested");
         assertThat(result.refundStatus()).isEqualTo("REQUESTED");
         var sequence = inOrder(orders, store, outbox);
-        sequence.verify(store).find("payment"); sequence.verify(orders).lockForCallback(io.order.backend.order.domain.OrderId.of("order"));
-        sequence.verify(store).lock("payment");
+        sequence.verify(store).find(PAYMENT_ID); sequence.verify(orders).lockForCallback(io.order.backend.order.domain.OrderId.of("order"));
+        sequence.verify(store).lock(PAYMENT_ID);
         sequence.verify(store).save(argThat(p -> p.getRefundStatus() == Payment.RefundStatus.REQUESTED
                 && p.getRefundActor().equals("admin") && p.getRefundReason().equals("requested")));
-        sequence.verify(outbox).enqueue("PAYMENT_REFUND_REQUESTED", "payment", "{\"paymentId\":\"payment\"}");
+        sequence.verify(outbox).enqueue("PAYMENT_REFUND_REQUESTED", PAYMENT_ID.toString(),
+                "{\"paymentId\":\"" + PAYMENT_ID + "\"}");
         verifyNoInteractions(gateway);
     }
     @Test void refund_existingIntent_doesNotEnqueueOrReplaceStableRequest() {
-        var payment = PaymentDomainTest.pending(BigDecimal.TEN).observe(true, "123")
+        var payment = PaymentTestFixtures.pending(BigDecimal.TEN).observe(true, "123")
                 .requestRefund("stable", "admin", "original", java.time.Instant.now());
         when(buyer.buyerId()).thenReturn("admin");
-        when(store.find("payment")).thenReturn(Optional.of(payment));
-        when(store.lock("payment")).thenReturn(payment);
+        when(store.find(PAYMENT_ID)).thenReturn(Optional.of(payment));
+        when(store.lock(PAYMENT_ID)).thenReturn(payment);
         executeIdempotentAction();
-        assertThat(refunds.refund("payment", "new-key", "new reason").refundStatus()).isEqualTo("REQUESTED");
+        assertThat(refunds.refund(PAYMENT_ID, "new-key", "new reason").refundStatus()).isEqualTo("REQUESTED");
         verify(store).save(payment); verifyNoInteractions(outbox, gateway);
     }
     @Test void refund_pendingPayment_rejectsWithoutIntentOrEvent() {
-        var payment = PaymentDomainTest.pending(BigDecimal.TEN);
+        var payment = PaymentTestFixtures.pending(BigDecimal.TEN);
         when(buyer.buyerId()).thenReturn("admin");
-        when(store.find("payment")).thenReturn(Optional.of(payment));
-        when(store.lock("payment")).thenReturn(payment);
+        when(store.find(PAYMENT_ID)).thenReturn(Optional.of(payment));
+        when(store.lock(PAYMENT_ID)).thenReturn(payment);
         executeIdempotentAction();
-        assertThatThrownBy(() -> refunds.refund("payment", "key", "requested"))
-                .isInstanceOf(IllegalStateException.class).hasMessage("Only settled payments can be refunded");
+        assertThatThrownBy(() -> refunds.refund(PAYMENT_ID, "key", "requested"))
+                .isInstanceOf(AppException.class).hasMessage("Only settled payments can be refunded");
         verify(store, never()).save(any()); verifyNoInteractions(outbox, gateway);
     }
     @Test void ipn_invalidSignature_doesNotReadOrMutatePayments() {
@@ -118,27 +124,28 @@ class PaymentServiceTest {
     }
     @Test void ipn_invalidAmount_doesNotLockOrMutate() {
         var f=new PaymentNotification(true,false,"ref",null,null,false,null);
-        when(store.byReference("ref")).thenReturn(Optional.of(PaymentDomainTest.pending(BigDecimal.TEN)));
+        when(store.byReference(TRANSACTION_REF)).thenReturn(Optional.of(PaymentTestFixtures.pending(BigDecimal.TEN)));
         assertThat(callbacks.ipn(f)).isEqualTo(PaymentCallbackUseCase.NotificationResult.INVALID_DATA); verifyNoInteractions(orders,outbox); verify(store,never()).save(any());
     }
     @Test void ipn_lateSuccess_persistsBeforeEventAndLocksOrderFirst() {
-        var p=PaymentDomainTest.pending(BigDecimal.TEN).observe(false,null);
+        var p=PaymentTestFixtures.pending(BigDecimal.TEN).observe(false,null);
         var f=new PaymentNotification(true,true,"ref",BigDecimal.TEN,"VND",true,"123");
-        when(store.byReference("ref")).thenReturn(Optional.of(p)); when(store.lock(p.getId())).thenReturn(p);
+        when(store.byReference(TRANSACTION_REF)).thenReturn(Optional.of(p)); when(store.lock(p.getId())).thenReturn(p);
         assertThat(callbacks.ipn(f)).isEqualTo(PaymentCallbackUseCase.NotificationResult.CONFIRMED);
-        var sequence=inOrder(orders,store,outbox); sequence.verify(store).byReference("ref"); sequence.verify(orders).lockForCallback(io.order.backend.order.domain.OrderId.of("order"));
-        sequence.verify(store).lock("payment"); sequence.verify(store).save(argThat(v->v.getStatus()==Payment.Status.SUCCEEDED));
-        sequence.verify(outbox).enqueue(eq("PAYMENT_SUCCEEDED"),eq("payment"),contains("\"orderId\":\"order\""));
+        var sequence=inOrder(orders,store,outbox); sequence.verify(store).byReference(TRANSACTION_REF); sequence.verify(orders).lockForCallback(io.order.backend.order.domain.OrderId.of("order"));
+        sequence.verify(store).lock(PAYMENT_ID); sequence.verify(store).save(argThat(v->v.getStatus()==Payment.Status.SUCCEEDED));
+        sequence.verify(outbox).enqueue(eq("PAYMENT_SUCCEEDED"),eq(PAYMENT_ID.toString()),
+                contains("\"orderId\":\"" + io.order.backend.order.domain.OrderId.of("order") + "\""));
     }
     @Test void ipn_unknownReference_returnsNotFoundBeforeDataValidation() {
         var notification=new PaymentNotification(true,false,"missing",null,null,false,null);
-        when(store.byReference("missing")).thenReturn(Optional.empty());
+        when(store.byReference(TransactionRef.of("missing"))).thenReturn(Optional.empty());
         assertThat(callbacks.ipn(notification)).isEqualTo(PaymentCallbackUseCase.NotificationResult.NOT_FOUND);
         verifyNoInteractions(orders,outbox);
     }
     @Test void ipn_mismatchedAmountCurrencyOrReference_doesNotMutate() {
-        var p=PaymentDomainTest.pending(BigDecimal.TEN);
-        when(store.byReference(anyString())).thenReturn(Optional.of(p));
+        var p=PaymentTestFixtures.pending(BigDecimal.TEN);
+        when(store.byReference(any(TransactionRef.class))).thenReturn(Optional.of(p));
         for(var notification:List.of(
                 new PaymentNotification(true,true,"ref",BigDecimal.ONE,"VND",true,"123"),
                 new PaymentNotification(true,true,"ref",BigDecimal.TEN,"USD",true,"123"),
@@ -148,24 +155,24 @@ class PaymentServiceTest {
         verifyNoInteractions(orders,outbox); verify(store,never()).save(any());
     }
     @Test void returnView_validNotification_reportsPersistedStateWithoutSettlement() {
-        var p=PaymentDomainTest.pending(BigDecimal.TEN);
+        var p=PaymentTestFixtures.pending(BigDecimal.TEN);
         var notification=new PaymentNotification(true,true,"ref",BigDecimal.TEN,"VND",true,"123");
-        when(store.byReference("ref")).thenReturn(Optional.of(p));
+        when(store.byReference(TRANSACTION_REF)).thenReturn(Optional.of(p));
         assertThat(callbacks.returnView(notification)).isEqualTo(new PaymentCallbackUseCase.ReturnView(true,"PENDING",
                 "Payment confirmation is processed through IPN, not this page"));
         verifyNoInteractions(orders,outbox); verify(store,never()).save(any());
     }
     @Test void ipn_conflictingTransaction_doesNotMutate() {
-        var p=PaymentDomainTest.pending(BigDecimal.TEN).observe(true,"123");
-        when(store.byReference("ref")).thenReturn(Optional.of(p)); when(store.lock(p.getId())).thenReturn(p);
+        var p=PaymentTestFixtures.pending(BigDecimal.TEN).observe(true,"123");
+        when(store.byReference(TRANSACTION_REF)).thenReturn(Optional.of(p)); when(store.lock(p.getId())).thenReturn(p);
         assertThat(callbacks.ipn(new PaymentNotification(true,true,"ref",BigDecimal.TEN,"VND",true,"456")))
                 .isEqualTo(PaymentCallbackUseCase.NotificationResult.CONFLICTING_TRANSACTION);
         verifyNoInteractions(outbox); verify(store,never()).save(any());
     }
     @Test void ipn_duplicateSuccess_doesNotEmitAgain() {
-        var p=PaymentDomainTest.pending(BigDecimal.TEN).observe(true,"123");
+        var p=PaymentTestFixtures.pending(BigDecimal.TEN).observe(true,"123");
         var f=new PaymentNotification(true,true,"ref",BigDecimal.TEN,"VND",true,"123");
-        when(store.byReference("ref")).thenReturn(Optional.of(p)); when(store.lock(p.getId())).thenReturn(p);
+        when(store.byReference(TRANSACTION_REF)).thenReturn(Optional.of(p)); when(store.lock(p.getId())).thenReturn(p);
         assertThat(callbacks.ipn(f)).isEqualTo(PaymentCallbackUseCase.NotificationResult.ALREADY_CONFIRMED); verifyNoInteractions(outbox); verify(store,never()).save(any());
     }
 }

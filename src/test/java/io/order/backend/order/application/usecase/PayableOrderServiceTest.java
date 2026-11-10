@@ -1,9 +1,15 @@
 package io.order.backend.order.application.usecase;
 
-import io.order.backend.common.exception.ResourceNotFoundException;
-import io.order.backend.order.application.port.out.OrderRepository;
-import io.order.backend.order.domain.Order;
-import org.junit.jupiter.api.BeforeEach;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -11,81 +17,90 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.Optional;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
+import io.order.backend.order.application.port.out.OrderRepository;
+import io.order.backend.order.domain.Order;
+import io.order.backend.order.domain.OrderId;
+import io.order.backend.payment.domain.PaymentId;
+import io.order.backend.user.domain.UserId;
 
 @ExtendWith(MockitoExtension.class)
 class PayableOrderServiceTest {
-    @Mock OrderRepository orders;
-    @InjectMocks PayableOrderService service;
-    private Order order;
+    private static final OrderId ORDER_ID = OrderId.of("order");
+    private static final UserId BUYER_ID = UserId.of("00000000-0000-0000-0000-000000000001");
 
-    @BeforeEach
-    void setUp() {
-        order = new Order();
-        order.setId("order");
-        order.setUserId("buyer");
-        order.setOrderStatus("UNPAID");
-        order.setSubtotal(new BigDecimal("100000"));
-        order.setShippingCost(new BigDecimal("30000"));
-        order.setExpiresAt(Instant.now().plusSeconds(900));
-        when(orders.lockById("order")).thenReturn(Optional.of(order));
-    }
+    @Mock
+    OrderRepository orders;
+    @Mock
+    Order order;
+    @InjectMocks
+    PayableOrderService service;
 
     @Test
     void lockForPayment_whenPayable_returnsSnapshotUnderLock() {
-        var result = service.lockForPayment("order", "buyer");
-        assertThat(result.id()).isEqualTo("order");
-        assertThat(result.buyerId()).isEqualTo("buyer");
+        var expiresAt = Instant.parse("2026-10-22T05:00:00Z");
+        when(orders.lockById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(order.getId()).thenReturn(ORDER_ID);
+        when(order.getUserId()).thenReturn(BUYER_ID);
+        when(order.getTotal()).thenReturn(new BigDecimal("130000"));
+        when(order.getExpiresAt()).thenReturn(expiresAt);
+
+        var result = service.lockForPayment(ORDER_ID, BUYER_ID);
+
+        assertThat(result.id()).isEqualTo(ORDER_ID);
+        assertThat(result.buyerId()).isEqualTo(BUYER_ID);
         assertThat(result.amount()).isEqualByComparingTo("130000");
         assertThat(result.currency()).isEqualTo("VND");
-        assertThat(result.expiresAt()).isEqualTo(order.getExpiresAt());
-        verify(orders).lockById("order");
+        assertThat(result.expiresAt()).isEqualTo(expiresAt);
+        verify(orders).lockById(ORDER_ID);
     }
 
     @Test
     void lockForPayment_whenDifferentBuyer_hidesOrder() {
-        assertThatThrownBy(() -> service.lockForPayment("order", "other"))
-                .isInstanceOf(ResourceNotFoundException.class);
+        when(orders.lockById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(order.getUserId()).thenReturn(BUYER_ID);
+
+        assertThatThrownBy(() -> service.lockForPayment(ORDER_ID,
+                UserId.of("00000000-0000-0000-0000-000000000002")))
+                .isInstanceOfSatisfying(AppException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ORDER_NOT_FOUND));
     }
 
     @Test
-    void lockForPayment_whenPaid_rejectsPayment() {
-        order.setOrderStatus("PAID");
-        assertThatThrownBy(() -> service.lockForPayment("order", "buyer"))
-                .isInstanceOf(IllegalStateException.class).hasMessage("Order is not payable");
-    }
+    void lockForPayment_whenOrderCannotBePaid_rejectsPayment() {
+        when(orders.lockById(ORDER_ID)).thenReturn(Optional.of(order));
+        when(order.getUserId()).thenReturn(BUYER_ID);
+        when(order.expire(any(Instant.class))).thenReturn(true);
 
-    @Test
-    void lockForPayment_whenExpired_rejectsPayment() {
-        order.setExpiresAt(Instant.now().minusSeconds(1));
-        assertThatThrownBy(() -> service.lockForPayment("order", "buyer"))
-                .isInstanceOf(IllegalStateException.class).hasMessage("Order is not payable");
+        assertThatThrownBy(() -> service.lockForPayment(ORDER_ID, BUYER_ID))
+                .isInstanceOf(AppException.class).hasMessage("Order is not payable");
     }
 
     @Test
     void lockForPayment_whenMissing_hidesOrder() {
-        when(orders.lockById("order")).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> service.lockForPayment("order", "buyer"))
-                .isInstanceOf(ResourceNotFoundException.class);
+        when(orders.lockById(ORDER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.lockForPayment(ORDER_ID, BUYER_ID))
+                .isInstanceOfSatisfying(AppException.class,
+                        exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ORDER_NOT_FOUND));
     }
 
     @Test
-    void lockForCallback_whenPresent_locksWithoutPayabilityChecks() {
-        order.setOrderStatus("PAID");
-        service.lockForCallback("order");
-        verify(orders).lockById("order");
+    void lockForCallback_whenOrderPaid_stillLocksOrder() {
+        when(orders.lockById(ORDER_ID)).thenReturn(Optional.of(order));
+
+        service.lockForCallback(ORDER_ID);
+
+        verify(orders).lockById(ORDER_ID);
     }
 
     @Test
     void paymentMethods_requireCallerTransaction() throws Exception {
-        service.lockForCallback("order");
-        assertThat(PayableOrderService.class.getMethod("lockForPayment", String.class, String.class)
+        assertThat(PayableOrderService.class.getMethod("lockForPayment", OrderId.class, UserId.class)
                 .getAnnotation(Transactional.class).propagation()).isEqualTo(Propagation.MANDATORY);
-        assertThat(PayableOrderService.class.getMethod("lockForCallback", String.class)
+        assertThat(PayableOrderService.class.getMethod("lockForCallback", OrderId.class)
                 .getAnnotation(Transactional.class).propagation()).isEqualTo(Propagation.MANDATORY);
     }
 }

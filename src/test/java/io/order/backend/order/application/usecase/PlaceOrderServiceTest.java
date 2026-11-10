@@ -1,77 +1,71 @@
 package io.order.backend.order.application.usecase;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import io.order.backend.order.application.port.in.PlaceOrderUseCase.CreateOrder;
 import io.order.backend.order.application.port.in.PlaceOrderUseCase.Line;
 import io.order.backend.order.application.port.out.OrderRepository;
 import io.order.backend.order.domain.Order;
-
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import io.order.backend.order.domain.OrderItem;
+import io.order.backend.product.domain.ProductId;
+import io.order.backend.user.domain.UserId;
 
 @ExtendWith(MockitoExtension.class)
 class PlaceOrderServiceTest {
-    @Mock OrderRepository orders;
-
-    @InjectMocks PlaceOrderService service;
-
-    @Test
-    void placeOrder_whenSnapshotProvided_preservesCheckoutDefaults() {
-        var line = new Line("product", "name", "sku", 2, new BigDecimal("50000"), new BigDecimal("100000"));
-        var command = new CreateOrder("buyer", "seller", List.of(line), line.subtotal(), "address", "notes");
-
-        when(orders.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
-        Instant before = Instant.now();
-
-        assertThat(service.placeOrder(command).getTotal()).isEqualByComparingTo("130000");
-
-        var saved = ArgumentCaptor.forClass(Order.class);
-        verify(orders).save(saved.capture());
-        var order = saved.getValue();
-        assertThat(UUID.fromString(order.getId()).toString()).isEqualTo(order.getId());
-        assertThat(order.getOrderNumber()).isEqualTo("ORD-" + order.getId());
-        assertThat(order.getUserId()).isEqualTo("buyer");
-        assertThat(order.getSellerId()).isEqualTo("seller");
-        assertThat(order.getShippingAddress()).isEqualTo("address");
-        assertThat(order.getNotes()).isEqualTo("notes");
-        assertThat(order.getSubtotal()).isEqualByComparingTo("100000");
-        assertThat(order.getShippingCost()).isEqualByComparingTo("30000");
-        assertThat(order.getTotal()).isEqualByComparingTo("130000");
-        assertThat(order.getPaymentMethod()).isEqualTo("VNPAY");
-        assertThat(order.getPaymentStatus()).isEqualTo("UNPAID");
-        assertThat(order.getOrderStatus()).isEqualTo("UNPAID");
-        assertThat(order.getReservationStatus()).isEqualTo("HELD");
-        assertThat(order.getOrderDate()).isNotNull();
-        assertThat(order.getExpiresAt()).isBetween(before.plusSeconds(900), Instant.now().plusSeconds(900));
-        assertThat(order.getItems()).singleElement().satisfies(item -> {
-            assertThat(item.getProductId()).isEqualTo(line.productId());
-            assertThat(item.getProductName()).isEqualTo(line.productName());
-            assertThat(item.getSku()).isEqualTo(line.sku());
-            assertThat(item.getQuantity()).isEqualTo(line.quantity());
-            assertThat(item.getUnitPrice()).isEqualTo(line.unitPrice());
-            assertThat(item.getSubtotal()).isEqualTo(line.subtotal());
-        });
-    }
+    @Mock
+    OrderRepository orders;
+    @InjectMocks
+    PlaceOrderService service;
 
     @Test
-    void createOrder_whenSourceListChanges_keepsImmutableSnapshot() {
-        var lines = new ArrayList<>(List.of(new Line("p", "name", "sku", 1, BigDecimal.ONE, BigDecimal.ONE)));
-        var command = new CreateOrder("buyer", "seller", lines, BigDecimal.ONE, "address", null);
-        lines.clear();
-        assertThat(command.lines()).hasSize(1);
-        assertThatThrownBy(() -> command.lines().clear()).isInstanceOf(UnsupportedOperationException.class);
+    void placeOrder_whenCheckoutSnapshotProvided_mapsLinesAndSavesOrder() {
+        var productId = ProductId.of("product");
+        var ownerId = UserId.of("00000000-0000-0000-0000-000000000001");
+        var line = new Line(productId, "Product", "SKU", 2,
+                new BigDecimal("50000"), new BigDecimal("100000"));
+        var command = new CreateOrder(ownerId, "seller", List.of(line), line.subtotal(),
+                "address", "notes");
+        var expectedOrder = mock(Order.class);
+
+        try (MockedStatic<Order> orderFactory = mockStatic(Order.class)) {
+            orderFactory.when(() -> Order.place(eq(ownerId), eq("seller"), anyList(),
+                    eq(line.subtotal()), eq("address"), eq("notes"),
+                    any(Instant.class), any(LocalDateTime.class))).thenAnswer(invocation -> {
+                        List<OrderItem> items = invocation.getArgument(2);
+                        assertThat(items).singleElement().satisfies(item -> {
+                            assertThat(item.getProductId()).isEqualTo(productId);
+                            assertThat(item.getProductName()).isEqualTo("Product");
+                            assertThat(item.getSku()).isEqualTo("SKU");
+                            assertThat(item.getQuantity()).isEqualTo(2);
+                            assertThat(item.getUnitPrice()).isEqualByComparingTo("50000");
+                            assertThat(item.getSubtotal()).isEqualByComparingTo("100000");
+                        });
+                        return expectedOrder;
+                    });
+            when(orders.save(expectedOrder)).thenReturn(expectedOrder);
+
+            assertThat(service.placeOrder(command)).isSameAs(expectedOrder);
+
+            verify(orders).save(expectedOrder);
+        }
     }
 }

@@ -1,5 +1,7 @@
 package io.order.backend.cart.domain;
 
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.product.domain.ProductId;
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -15,14 +17,14 @@ public final class CartItem {
         this.productId = Objects.requireNonNull(productId);
         this.productName = Objects.requireNonNull(productName);
         if (unitPrice == null || unitPrice.signum() <= 0 || unitPrice.stripTrailingZeros().scale() > 0)
-            throw new IllegalArgumentException("Invalid unit price");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid unit price");
         this.quantity = quantity;
         this.unitPrice = unitPrice;
     }
 
     static void validateQuantity(int quantity) {
         if (quantity < 1 || quantity > 100000)
-            throw new IllegalArgumentException("Invalid quantity");
+            throw new AppException(ErrorCode.INVALID_INPUT, "Invalid quantity");
     }
 
     public ProductId getProductId() { return productId; }

@@ -1,8 +1,12 @@
 package io.order.backend.payment.application.usecase;
 
+import io.order.backend.common.application.port.OutboxPort;
 import io.order.backend.payment.application.port.in.*;
 import io.order.backend.payment.application.port.out.*;
 import io.order.backend.payment.domain.Payment;
+import io.order.backend.payment.domain.PaymentId;
+import tools.jackson.databind.json.JsonMapper;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -14,13 +18,12 @@ public class PaymentWorker implements PaymentWorkUseCase {
     private final PayableOrderPort orders;
     private final PaymentGateway gateway;
     private final RecordPaymentObservationUseCase payments;
-    private final io.order.backend.common.application.port.OutboxPort outbox;
-    private final tools.jackson.databind.json.JsonMapper json;
+    private final OutboxPort outbox;
+    private final JsonMapper json;
     private final TransactionTemplate tx;
 
     public PaymentWorker(PaymentRepository store, PayableOrderPort orders, PaymentGateway gateway, RecordPaymentObservationUseCase payments,
-            io.order.backend.common.application.port.OutboxPort outbox, tools.jackson.databind.json.JsonMapper json,
-            PlatformTransactionManager manager) {
+            OutboxPort outbox, JsonMapper json, PlatformTransactionManager manager) {
         this.store = store;
         this.orders = orders;
         this.gateway = gateway;
@@ -35,7 +38,7 @@ public class PaymentWorker implements PaymentWorkUseCase {
         var ids = tx.execute(s -> store.due(Instant.now(), 25));
         if (ids == null)
             return;
-        for (String id : ids) {
+        for (PaymentId id : ids) {
             try {
                 process(id);
             } catch (RuntimeException ignored) {
@@ -43,12 +46,12 @@ public class PaymentWorker implements PaymentWorkUseCase {
         }
     }
 
-    public void process(String id) {
+    public void process(PaymentId id) {
         var work = tx.execute(s -> {
             var p = store.find(id).orElse(null);
             if (p == null)
                 return null;
-            orders.lockForCallback(p.getOrderIdentifier());
+            orders.lockForCallback(p.getOrderId());
             var claimed = store.claim(id, Instant.now());
             if (claimed == null) return null;
             var payment = claimed.payment();
@@ -78,7 +81,7 @@ public class PaymentWorker implements PaymentWorkUseCase {
         var refund = sendRefund ? gateway.refund(p) : null;
         var observation = sendRefund ? null : gateway.query(p);
         tx.executeWithoutResult(s -> {
-            orders.lockForCallback(p.getOrderIdentifier());
+            orders.lockForCallback(p.getOrderId());
             var current = store.lock(id);
             if (!store.ownsLease(id, work.token()))
                 return;
@@ -98,8 +101,8 @@ public class PaymentWorker implements PaymentWorkUseCase {
                     if (observation.state() == PaymentGateway.Observation.State.REFUNDED) {
                         var next = current.refundState(Payment.RefundStatus.REFUNDED);
                         store.save(next);
-                        outbox.enqueue("PAYMENT_REFUNDED", next.getId(), json.writeValueAsString(
-                                new PaymentEvent(next.getOrderId(), next.getId(), next.getAmount(), next.getCurrency())));
+                        outbox.enqueue("PAYMENT_REFUNDED", next.getId().toString(), json.writeValueAsString(
+                                new PaymentEvent(next.getOrderId().toString(), next.getId().toString(), next.getAmount(), next.getCurrency())));
                     } else {
                         if (work.attempts() >= 8)
                             current.refundState(Payment.RefundStatus.MANUAL_REVIEW);

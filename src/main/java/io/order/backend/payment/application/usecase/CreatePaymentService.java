@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import io.order.backend.common.application.port.CurrentBuyerPort;
 import io.order.backend.common.application.port.IdempotencyPort;
+import io.order.backend.common.exception.AppException;
+import io.order.backend.common.exception.ErrorCode;
 import io.order.backend.payment.application.port.in.CreatePaymentCommand;
 import io.order.backend.payment.application.port.in.CreatePaymentUsecase;
 import io.order.backend.payment.application.port.in.PaymentResult;
@@ -36,7 +38,7 @@ public class CreatePaymentService implements CreatePaymentUsecase {
                 java.util.Map.of("orderId", orderId), PaymentResult.class, () -> {
             var order = orders.lockForPayment(command.orderId(), UserId.of(buyerId));
             if (store.orderSettled(command.orderId()))
-                throw new IllegalStateException("Order already paid");
+                throw new AppException(ErrorCode.CONFLICT, "Order already paid");
             var payment = Payment.create(command.orderId(), UserId.of(buyerId), order.amount(), order.currency(),
                     Instant.now(), order.expiresAt());
             store.save(payment);
