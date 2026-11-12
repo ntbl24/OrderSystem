@@ -1,5 +1,7 @@
 package com.abug.identity.common.configuration;
 
+import com.abug.identity.common.exception.ErrorCode;
+import com.abug.identity.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
@@ -16,13 +18,10 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             throws IOException {
         ErrorCode errorCode = ErrorCode.UNAUTHENTICATED;
 
-        response.setStatus(errorCode.getStatusCode().value());
+        response.setStatus(errorCode.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-        ApiRespone<?> apiResponse = ApiResponse.builder()
-                .code(errorCode.getCode())
-                .message(errorCode.getMessage())
-                .build();
+        ApiResponse<?> apiResponse = ApiResponse.error(errorCode);
 
         ObjectMapper objectMapper = new ObjectMapper();
 

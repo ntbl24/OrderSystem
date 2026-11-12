@@ -1,9 +1,6 @@
 package com.abug.identity.infrastructure.persistence;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.Set;
@@ -15,6 +12,7 @@ import java.util.Set;
 @AllArgsConstructor
 public class RoleEntity {
     @Id
+    @Column(nullable = false)
     private String name;
     private String description;
 

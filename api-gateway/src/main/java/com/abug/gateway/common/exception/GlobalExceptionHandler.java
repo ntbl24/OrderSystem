@@ -4,14 +4,13 @@ import com.abug.gateway.common.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.server.ServerWebInputException;
 
 @Slf4j
 @RestControllerAdvice
@@ -51,8 +50,8 @@ public class GlobalExceptionHandler {
         ));
     }
 
-    @ExceptionHandler({HttpMessageNotReadableException.class, MissingRequestHeaderException.class,
-            HandlerMethodValidationException.class, IllegalArgumentException.class})
+    @ExceptionHandler({ServerWebInputException.class, ServerWebInputException.class,
+            WebExchangeBindException.class, IllegalArgumentException.class})
     public ResponseEntity<ApiResponse<Void>> invalid(Exception exception) {
         return ResponseEntity.badRequest().body(ApiResponse.error(
                 ErrorCode.INVALID_INPUT.getCode(),

@@ -37,7 +37,7 @@ public class ApplicationInitConfig {
 
                 roles.add(adminRole);
 
-                User user = User.create(null, ADMIN_USER_NAME, passwordEncoder.encode(ADMIN_PASSWORD), true, roles);
+                User user = User.create("admin@gmail.com", ADMIN_USER_NAME, passwordEncoder.encode(ADMIN_PASSWORD), true, roles);
                 userRepository.save(user);
             }
         };

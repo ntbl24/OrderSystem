@@ -5,6 +5,7 @@ import com.abug.identity.common.response.ApiResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,6 +16,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration(proxyBeanMethods = false)
@@ -25,7 +27,11 @@ public class SecurityConfig {
     private final CustomJwtDecoder customJwtDecoder;
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/users/registration", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh"
+            "/users/registration",
+            "/auth/token",
+            "/auth/introspect",
+            "/auth/logout",
+            "/auth/refresh"
     };
 
 
@@ -36,12 +42,19 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JsonMapper json) throws Exception {
         AccessDeniedHandler forbidden = (request, response, exception) -> {
-            response.setStatus(403);
-            response.setContentType("application/json");
-            json.writeValue(response.getOutputStream(), ApiResponse.error(ErrorCode.UNAUTHORIZED));
+            ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
+            response.setStatus(errorCode.getHttpStatus().value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ApiResponse<?> apiResponse = ApiResponse.error(errorCode);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+            response.flushBuffer();
         };
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors.authenticationEntryPoint(new JwtAuthenticationEntryPoint()).accessDeniedHandler(forbidden))

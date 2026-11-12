@@ -1,9 +1,6 @@
 package com.abug.identity.infrastructure.persistence;
 
-import com.abug.identity.domain.Permission;
-import com.abug.identity.domain.Role;
-import com.abug.identity.domain.User;
-import com.abug.identity.domain.UserId;
+import com.abug.identity.domain.*;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,5 +63,16 @@ final class IdentityPersistenceMapper {
                 user.getPassword(),
                 user.isEmailVerified(),
                 roles);
+    }
+
+    static InvalidatedTokenEntity entity(InvalidatedToken invalidatedToken){
+        return new InvalidatedTokenEntity(
+                invalidatedToken.getId(),
+                invalidatedToken.getExpiryTime()
+        );
+    }
+
+    static InvalidatedToken domain(InvalidatedTokenEntity entity){
+        return InvalidatedToken.create(entity.getId(), entity.getExpiryTime());
     }
 }

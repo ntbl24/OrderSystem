@@ -1,0 +1,22 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /identity
+
+spring:
+  application:
+    name: identity-service
+  datasource:
+    url: "jdbc:postgresql://localhost:3306/identity"
+    username: "root"
+    password: "root"
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+jwt:
+  signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"
+  valid-duration: 3600
+  refresh-duration: 3600
+
+
