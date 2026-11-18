@@ -8,26 +8,29 @@ import com.abug.identity.infrastructure.web.dto.UserResponse;
 import com.abug.identity.infrastructure.web.dto.UserUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserUseCase userUseCase;
 
-    @PostMapping
+    @PostMapping("/registration")
     ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request) {
         return ApiResponse.success(UserResponse.from(userUseCase.create(request.toCommand())));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     ApiResponse<List<UserResponse>> getUsers() {
         return ApiResponse.success(userUseCase.getUsers().stream().map(UserResponse::from).toList());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{userId}")
     ApiResponse<UserResponse> getUser(@PathVariable("userId") String userId) {
         return ApiResponse.success(UserResponse.from(userUseCase.getUser(UserId.of(userId))));
@@ -38,6 +41,7 @@ public class UserController {
         return ApiResponse.success(UserResponse.from(userUseCase.getMyInfo()));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{userId}")
     ApiResponse<String> deleteUser(@PathVariable String userId) {
         userUseCase.deleteUser(UserId.of(userId));

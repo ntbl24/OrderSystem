@@ -1,8 +1,8 @@
 package com.abug.cart.domain;
 
-import com.abug.common.exception.AppException;
-import com.abug.common.exception.ErrorCode;
-import com.abug.product.domain.ProductId;
+import com.abug.cart.common.exception.AppException;
+import com.abug.cart.common.exception.ErrorCode;
+
 import java.math.BigDecimal;
 import java.util.Objects;
 

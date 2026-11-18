@@ -1,19 +1,18 @@
 package com.abug.cart.domain;
 
-import com.abug.common.exception.AppException;
-import com.abug.common.exception.ErrorCode;
-import com.abug.product.domain.ProductId;
-import com.abug.user.domain.UserId;
+import com.abug.cart.common.exception.AppException;
+import com.abug.cart.common.exception.ErrorCode;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class Cart {
-    private final CartId id;
-    private final UserId userId;
+    private CartId id;
+    private UserId userId;
     private Long version;
-    private final List<CartItem> items = new ArrayList<>();
+    private List<CartItem> items = new ArrayList<>();
     private BigDecimal subTotal = BigDecimal.ZERO;
     private BigDecimal shippingCost = BigDecimal.ZERO;
     private BigDecimal total = BigDecimal.ZERO;

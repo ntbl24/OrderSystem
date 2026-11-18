@@ -57,7 +57,6 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated())
-                .exceptionHandling(errors -> errors.authenticationEntryPoint(new JwtAuthenticationEntryPoint()).accessDeniedHandler(forbidden))
                 .oauth2ResourceServer(resource -> resource
                         .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                         .accessDeniedHandler(forbidden)

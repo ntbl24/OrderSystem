@@ -5,6 +5,8 @@ import com.abug.cart.domain.ProductId;
 import com.abug.cart.infrastructure.client.dto.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Optional;
 
@@ -18,8 +20,6 @@ public class ProductCatalogAdapter implements ProductCatalogPort {
     public Optional<Snapshot> findById(ProductId id) {
 
         ProductResponse response = client.getProductById(id.toString());
-
-
         return Optional.of(new Snapshot(id, response.title(), response.price()));
     }
 }

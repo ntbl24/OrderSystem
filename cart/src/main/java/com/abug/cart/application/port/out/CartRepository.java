@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import com.abug.cart.domain.Cart;
 import com.abug.cart.domain.CartId;
-import com.abug.user.domain.UserId;
+import com.abug.cart.domain.UserId;
 
 public interface CartRepository {
     Optional<Cart> findByUserId(UserId userId);

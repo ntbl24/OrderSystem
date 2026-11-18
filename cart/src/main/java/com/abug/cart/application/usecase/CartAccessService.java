@@ -1,17 +1,17 @@
 package com.abug.cart.application.usecase;
 
 import com.abug.cart.application.port.out.CartRepository;
+import com.abug.cart.common.exception.AppException;
+import com.abug.cart.common.exception.ErrorCode;
 import com.abug.cart.domain.Cart;
 import com.abug.cart.domain.CartId;
-import com.abug.common.application.port.CurrentBuyerPort;
-import com.abug.common.exception.AppException;
-import com.abug.common.exception.ErrorCode;
-import com.abug.user.domain.UserId;
+import com.abug.cart.domain.UserId;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
-@org.springframework.stereotype.Service
+@Service
 @RequiredArgsConstructor
-public class CartAccessService {
+public class CartAccessService implements{
     private final CurrentBuyerPort buyer;
     private final CartRepository cartRepository;
 

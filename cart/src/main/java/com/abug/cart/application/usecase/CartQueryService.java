@@ -2,6 +2,7 @@ package com.abug.cart.application.usecase;
 
 import java.util.Optional;
 
+import com.abug.cart.domain.UserId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,7 +10,6 @@ import com.abug.cart.application.port.in.CartQueryUseCase;
 import com.abug.cart.application.port.out.CartRepository;
 import com.abug.cart.domain.Cart;
 import com.abug.cart.domain.CartId;
-import com.abug.user.domain.UserId;
 import lombok.RequiredArgsConstructor;
 
 @Service

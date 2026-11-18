@@ -1,7 +1,7 @@
 package com.abug.cart.infrastructure.persistence;
 
 import com.abug.cart.domain.CartItem;
-import com.abug.product.domain.ProductId;
+import com.abug.cart.domain.ProductId;
 
 public final class CartItemMapper {
     private CartItemMapper() {

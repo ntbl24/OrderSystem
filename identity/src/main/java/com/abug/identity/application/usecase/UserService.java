@@ -12,6 +12,7 @@ import com.abug.identity.domain.Role;
 import com.abug.identity.domain.User;
 import com.abug.identity.domain.UserId;
 import lombok.RequiredArgsConstructor;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class UserService implements UserUseCase {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Override
     public User create(CreateUserCommand command) {
@@ -36,7 +38,11 @@ public class UserService implements UserUseCase {
 
         User user = User.create(command.email(), command.username(), passwordEncoder.encode(command.password()), false, roles);
 
-        return userRepository.save(user);
+        User newUser = userRepository.save(user);
+
+        kafkaTemplate.send("onboard-successful", "Welcome our new member" + user.getUserName());
+
+        return newUser;
     }
 
     @Override

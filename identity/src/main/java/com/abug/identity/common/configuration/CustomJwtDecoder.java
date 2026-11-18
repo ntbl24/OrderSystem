@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CustomJwtDecoder implements JwtDecoder {
+
     @Override
     public Jwt decode(String token) throws JwtException {
         try {

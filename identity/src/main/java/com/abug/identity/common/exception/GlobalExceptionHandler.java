@@ -74,18 +74,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> forbidden(AccessDeniedException exception) {
-        return ResponseEntity.status(ErrorCode.UNAUTHORIZED.getHttpStatus()).body(ApiResponse.error(
-                ErrorCode.UNAUTHORIZED.getCode(),
-                ErrorCode.UNAUTHORIZED.getMessage()
-        ));
+        return ResponseEntity.status(ErrorCode.UNAUTHORIZED.getHttpStatus()).body(ApiResponse.error(ErrorCode.UNAUTHORIZED));
     }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> unauthenticated(AuthenticationException exception) {
-        return ResponseEntity.status(ErrorCode.UNAUTHENTICATED.getHttpStatus()).body(ApiResponse.error(
-                ErrorCode.UNAUTHENTICATED.getCode(),
-                ErrorCode.UNAUTHENTICATED.getMessage()
-        ));
+        return ResponseEntity.status(ErrorCode.UNAUTHENTICATED.getHttpStatus()).body(ApiResponse.error(ErrorCode.UNAUTHENTICATED));
     }
 
     @ExceptionHandler(IllegalStateException.class)
@@ -99,9 +93,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> runtime(RuntimeException exception) {
         log.error("Unhandled runtime exception: {}", exception.getMessage(), exception);
-        return ResponseEntity.status(ErrorCode.UNCATEGORIZED_EXCEPTION.getHttpStatus()).body(ApiResponse.error(
-                ErrorCode.UNCATEGORIZED_EXCEPTION.getCode(),
-                ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage()
-        ));
+        return ResponseEntity.status(ErrorCode.UNCATEGORIZED_EXCEPTION.getHttpStatus()).body(ApiResponse.error(ErrorCode.UNCATEGORIZED_EXCEPTION));
     }
 }
