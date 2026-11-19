@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.text.ParseException;
@@ -75,6 +76,7 @@ public class AuthenticationService implements AuthenticationUseCase {
     }
 
     @Override
+    @Transactional
     public String refresh(String token) throws ParseException, JOSEException{
         SignedJWT signedJWT = verifyToken(token, true);
         var jit = signedJWT.getJWTClaimsSet().getJWTID();
@@ -92,6 +94,7 @@ public class AuthenticationService implements AuthenticationUseCase {
     }
 
     @Override
+    @Transactional
     public void logout(String token) throws ParseException, JOSEException {
         try{
             var signToken = verifyToken(token, true);

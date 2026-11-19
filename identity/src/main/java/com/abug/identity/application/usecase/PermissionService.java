@@ -6,6 +6,7 @@ import com.abug.identity.application.port.out.PermissionRepository;
 import com.abug.identity.domain.Permission;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ import java.util.List;
 public class PermissionService implements PermissionUseCase {
     private final PermissionRepository permissionRepository;
 
+    @Transactional
     public Permission create(PermissionCommand command) {
         Permission permission = Permission.create(command.name(), command.description());
         permission = permissionRepository.save(permission);
@@ -24,6 +26,7 @@ public class PermissionService implements PermissionUseCase {
         return permissionRepository.findAll();
     }
 
+    @Transactional
     public void delete(String permission) {
         permissionRepository.deleteById(permission);
     }

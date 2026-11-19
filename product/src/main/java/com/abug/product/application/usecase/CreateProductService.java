@@ -1,10 +1,10 @@
 package com.abug.product.application.usecase;
 
-import com.abug.common.exception.AppException;
-import com.abug.common.exception.ErrorCode;
 import com.abug.product.application.port.in.ProductCommand;
 import com.abug.product.application.port.in.CreateProductUseCase;
 import com.abug.product.application.port.out.ProductRepository;
+import com.abug.product.common.exception.AppException;
+import com.abug.product.common.exception.ErrorCode;
 import com.abug.product.domain.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

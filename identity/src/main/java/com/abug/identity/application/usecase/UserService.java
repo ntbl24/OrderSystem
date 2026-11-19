@@ -1,13 +1,16 @@
 package com.abug.identity.application.usecase;
 
+import com.abug.event.dto.NotificationEvent;
 import com.abug.identity.application.port.in.CreateUserCommand;
 import com.abug.identity.application.port.in.UpdateUserCommand;
 import com.abug.identity.application.port.in.UserUseCase;
+import com.abug.identity.application.port.out.OutboxRepository;
 import com.abug.identity.application.port.out.RoleRepository;
 import com.abug.identity.application.port.out.UserRepository;
 import com.abug.identity.common.constant.PredefinedRole;
 import com.abug.identity.common.exception.AppException;
 import com.abug.identity.common.exception.ErrorCode;
+import com.abug.identity.domain.OutboxEvent;
 import com.abug.identity.domain.Role;
 import com.abug.identity.domain.User;
 import com.abug.identity.domain.UserId;
@@ -16,6 +19,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.HashSet;
 import java.util.List;
@@ -26,9 +31,11 @@ public class UserService implements UserUseCase {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final OutboxRepository outboxRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
+    @Transactional
     public User create(CreateUserCommand command) {
 
         if (userRepository.existsByUsername(command.username())) throw new AppException(ErrorCode.USER_EXISTED);
@@ -40,7 +47,16 @@ public class UserService implements UserUseCase {
 
         User newUser = userRepository.save(user);
 
-        kafkaTemplate.send("onboard-successful", "Welcome our new member" + user.getUserName());
+        NotificationEvent notificationEvent = NotificationEvent.builder()
+                .channel("EMAIL")
+                .recipient(user.getEmail())
+                .subject("Welcome to MABB")
+                .body("Hello, " + user.getUserName())
+                .build();
+
+        OutboxEvent outboxEvent = OutboxEvent.create(user.getId().value(), "User", "UserCreated", objectMapper.writeValueAsString(notificationEvent), false);
+
+        outboxRepository.save(outboxEvent);
 
         return newUser;
     }
@@ -55,6 +71,7 @@ public class UserService implements UserUseCase {
     }
 
     @Override
+    @Transactional
     public User updateUser(UserId userId, UpdateUserCommand command) {
 
         User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -68,6 +85,7 @@ public class UserService implements UserUseCase {
     }
 
     @Override
+    @Transactional
     public void deleteUser(UserId userId) {
         userRepository.deleteById(userId);
     }

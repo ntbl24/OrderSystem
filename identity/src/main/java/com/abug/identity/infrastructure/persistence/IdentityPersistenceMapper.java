@@ -75,4 +75,12 @@ final class IdentityPersistenceMapper {
     static InvalidatedToken domain(InvalidatedTokenEntity entity){
         return InvalidatedToken.create(entity.getId(), entity.getExpiryTime());
     }
+
+    static OutboxEventEntity entity(OutboxEvent outboxEvent){
+        return OutboxEventEntity.create(outboxEvent.getAggregateId(), outboxEvent.getAggregateType(), outboxEvent.getPayload(), outboxEvent.getEventType(), outboxEvent.isPublished());
+    }
+
+    static OutboxEvent domain(OutboxEventEntity entity){
+        return OutboxEvent.create(entity.getAggregateId(), entity.getAggregateType(), entity.getEventType(), entity.getPayload(), entity.isPublished());
+    }
 }

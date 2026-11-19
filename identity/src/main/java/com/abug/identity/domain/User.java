@@ -2,6 +2,7 @@ package com.abug.identity.domain;
 
 
 import com.abug.identity.common.constant.PredefinedRole;
+import jakarta.persistence.Version;
 
 import java.util.Set;
 
@@ -11,6 +12,7 @@ public class User {
     private String userName;
     private String password;
     private boolean emailVerified;
+    private Long version;
     private Set<Role> roles;
 
     private User(){}
@@ -65,4 +67,5 @@ public class User {
     public Set<Role> getRoles() {
         return roles;
     }
+    public Long getVersion(){return version;}
 }

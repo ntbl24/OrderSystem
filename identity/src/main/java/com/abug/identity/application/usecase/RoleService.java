@@ -8,6 +8,7 @@ import com.abug.identity.domain.Permission;
 import com.abug.identity.domain.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -19,6 +20,7 @@ public class RoleService implements RoleUseCase {
     private final PermissionRepository permissionRepository;
 
     @Override
+    @Transactional
     public Role create(RoleCommand command) {
         Set<Permission> permissions = permissionRepository.findAllById(command.permissions());
         return Role.create(command.name(), command.description(), permissions);
@@ -30,6 +32,7 @@ public class RoleService implements RoleUseCase {
     }
 
     @Override
+    @Transactional
     public void delete(String role) {
         roleRepository.deleteById(role);
     }

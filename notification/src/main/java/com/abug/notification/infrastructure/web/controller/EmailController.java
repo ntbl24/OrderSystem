@@ -20,8 +20,5 @@ public class EmailController {
         return ApiResponse.success(SendEmailResponse.from(emailUseCase.sendEmail(request.toCommand())));
     }
 
-    @KafkaListener(topics = "onboard-successful")
-    public void listen(String message){
 
-    }
 }
