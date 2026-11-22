@@ -20,33 +20,24 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.38/lombok-1.18.38.jar" />
         </processorPath>
         <module name="payment" />
         <module name="shipment" />
         <module name="gateway" />
         <module name="order" />
       </profile>
-      <profile name="Annotation profile for notification" enabled="true">
+      <profile name="Annotation profile for file-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.48/lombok-1.18.48.jar" />
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.48/lombok-1.18.48.jar" />
         </processorPath>
         <module name="notification" />
         <module name="product" />
-        <module name="cart" />
-      </profile>
-      <profile name="Annotation profile for identity" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.48/lombok-1.18.48.jar" />
-        </processorPath>
+        <module name="file-service" />
         <module name="identity" />
+        <module name="cart" />
       </profile>
     </annotationProcessing>
   </component>
@@ -54,6 +45,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="backend" options="-parameters" />
       <module name="cart" options="-parameters" />
+      <module name="file-service" options="-parameters" />
       <module name="gateway" options="-parameters" />
       <module name="identity" options="-parameters" />
       <module name="notification" options="-parameters" />
