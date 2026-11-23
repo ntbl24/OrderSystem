@@ -1,6 +1,5 @@
 package com.abug.gateway.common.configuration;
 
-import com.abug.gateway.common.exception.ErrorCode;
 import com.abug.gateway.common.response.ApiResponse;
 import com.abug.gateway.service.IdentityService;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +34,8 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     private String[] publicEndpoints = {
             "/identity/auth/**",
             "/identity/users/registration",
-            "/notification/**"
+            "/notification/email/send",
+            "/file/media/download/**"
     };
 
     @Value("${app.api-prefix}")

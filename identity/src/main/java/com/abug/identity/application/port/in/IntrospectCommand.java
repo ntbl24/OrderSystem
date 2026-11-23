@@ -5,7 +5,7 @@ import com.abug.identity.common.exception.ErrorCode;
 
 public record IntrospectCommand(String token) {
     public IntrospectCommand{
-        if(token == null || !token.startsWith("Bearer"))
+        if(token == null)
             throw new AppException(ErrorCode.UNAUTHENTICATED, "Token is required");
     }
 }

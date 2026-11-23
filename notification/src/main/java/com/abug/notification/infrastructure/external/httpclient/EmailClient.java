@@ -1,7 +1,7 @@
-package com.abug.notification.infrastructure.client;
+package com.abug.notification.infrastructure.external.httpclient;
 
-import com.abug.notification.infrastructure.client.dto.EmailRequest;
-import com.abug.notification.infrastructure.client.dto.EmailResponse;
+import com.abug.notification.infrastructure.external.httpclient.dto.EmailRequest;
+import com.abug.notification.infrastructure.external.httpclient.dto.EmailResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;

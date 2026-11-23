@@ -1,4 +1,4 @@
-package com.abug.notification.infrastructure.client.dto;
+package com.abug.notification.infrastructure.external.httpclient.dto;
 
 import java.util.List;
 

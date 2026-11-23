@@ -1,17 +1,16 @@
-package com.abug.notification.infrastructure.client;
+package com.abug.notification.infrastructure.external.httpclient;
 
 import com.abug.notification.application.port.in.SendEmailCommand;
 import com.abug.notification.application.port.out.EmailPort;
 import com.abug.notification.common.exception.AppException;
 import com.abug.notification.common.exception.ErrorCode;
-import com.abug.notification.infrastructure.client.dto.EmailRequest;
-import com.abug.notification.infrastructure.client.dto.EmailResponse;
-import com.abug.notification.infrastructure.client.dto.Recipient;
-import com.abug.notification.infrastructure.client.dto.Sender;
+import com.abug.notification.infrastructure.external.httpclient.dto.EmailRequest;
+import com.abug.notification.infrastructure.external.httpclient.dto.EmailResponse;
+import com.abug.notification.infrastructure.external.httpclient.dto.Recipient;
+import com.abug.notification.infrastructure.external.httpclient.dto.Sender;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 

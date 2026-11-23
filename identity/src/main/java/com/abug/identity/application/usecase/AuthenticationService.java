@@ -52,7 +52,6 @@ public class AuthenticationService implements AuthenticationUseCase {
 
     @Override
     public boolean introspect(IntrospectCommand command) {
-        var token = command.token();
         boolean isValid = true;
         try{
             verifyToken(command.token(), false);
@@ -149,7 +148,7 @@ public class AuthenticationService implements AuthenticationUseCase {
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
         var verified = signedJWT.verify(verifier);
 
-        if(!verified && expiryTime.after(new Date())) throw new AppException(ErrorCode.UNAUTHENTICATED);
+        if(!verified || !expiryTime.after(new Date())) throw new AppException(ErrorCode.UNAUTHENTICATED);
 
         if(invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
             throw new AppException(ErrorCode.UNAUTHENTICATED);

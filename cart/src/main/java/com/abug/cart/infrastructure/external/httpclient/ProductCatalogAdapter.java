@@ -1,14 +1,12 @@
-package com.abug.cart.infrastructure.client;
+package com.abug.cart.infrastructure.external.httpclient;
 
 import com.abug.cart.application.port.out.ProductCatalogPort;
 import com.abug.cart.common.exception.AppException;
 import com.abug.cart.common.exception.ErrorCode;
 import com.abug.cart.domain.ProductId;
-import com.abug.cart.infrastructure.client.dto.ProductResponse;
+import com.abug.cart.infrastructure.external.httpclient.dto.ProductResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Optional;
 

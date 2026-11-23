@@ -1,4 +1,4 @@
-package com.abug.cart.infrastructure.client.dto;
+package com.abug.cart.infrastructure.external.httpclient.dto;
 
 import java.math.BigDecimal;
 

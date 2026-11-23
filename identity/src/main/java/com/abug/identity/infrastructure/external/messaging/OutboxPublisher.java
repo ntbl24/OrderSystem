@@ -1,4 +1,4 @@
-package com.abug.identity.infrastructure.messaging;
+package com.abug.identity.infrastructure.external.messaging;
 
 import com.abug.event.dto.NotificationEvent;
 import com.abug.identity.application.port.out.OutboxRepository;
