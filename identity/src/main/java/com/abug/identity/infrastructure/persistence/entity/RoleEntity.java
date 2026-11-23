@@ -1,4 +1,4 @@
-package com.abug.identity.infrastructure.persistence;
+package com.abug.identity.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

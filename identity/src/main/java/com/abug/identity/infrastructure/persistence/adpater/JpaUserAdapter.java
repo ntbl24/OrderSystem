@@ -1,8 +1,11 @@
-package com.abug.identity.infrastructure.persistence;
+package com.abug.identity.infrastructure.persistence.adpater;
 
 import com.abug.identity.application.port.out.UserRepository;
 import com.abug.identity.domain.User;
 import com.abug.identity.domain.UserId;
+import com.abug.identity.infrastructure.persistence.IdentityPersistenceMapper;
+import com.abug.identity.infrastructure.persistence.repository.UserJpaRepository;
+import com.abug.identity.infrastructure.persistence.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

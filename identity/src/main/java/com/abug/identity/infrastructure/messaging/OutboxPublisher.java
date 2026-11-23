@@ -1,5 +1,6 @@
 package com.abug.identity.infrastructure.messaging;
 
+import com.abug.event.dto.NotificationEvent;
 import com.abug.identity.application.port.out.OutboxRepository;
 import com.abug.identity.domain.OutboxEvent;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -16,6 +18,7 @@ import java.util.List;
 public class OutboxPublisher {
     private final OutboxRepository outboxRepository;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     @Scheduled(fixedDelay = 3000)
     public void publishPendingEvents(){
@@ -23,7 +26,7 @@ public class OutboxPublisher {
 
         for (OutboxEvent event: events){
             try{
-                kafkaTemplate.send("notification-delivery", event.getAggregateId().toString(), event.getPayload()).get();
+                kafkaTemplate.send("notification-delivery", event.getAggregateId().toString(), objectMapper.readValue(event.getPayload(), NotificationEvent.class)).get();
 
                 event.markPublished();
                 outboxRepository.save(event);

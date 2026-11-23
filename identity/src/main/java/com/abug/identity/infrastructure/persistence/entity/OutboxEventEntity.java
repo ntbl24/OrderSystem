@@ -1,6 +1,5 @@
-package com.abug.identity.infrastructure.persistence;
+package com.abug.identity.infrastructure.persistence.entity;
 
-import com.abug.identity.domain.OutboxEvent;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,13 +17,12 @@ import java.util.UUID;
 public class OutboxEventEntity {
     @Id
     @Column(name = "id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
 
     @Column(name = "aggregate_id", nullable = false)
     private UUID aggregateId;
 
-    @Column(name = "aggregate_id", nullable = false)
+    @Column(name = "aggregate_type", nullable = false)
     private String aggregateType;
 
     @Column(name = "event_type", nullable = false)
@@ -40,8 +38,9 @@ public class OutboxEventEntity {
     @CreationTimestamp
     private Instant createdAt;
 
-    public static OutboxEventEntity create(UUID aggregateId, String aggregateType, String eventType, String payload, boolean published) {
+    public static OutboxEventEntity create(UUID id, UUID aggregateId, String aggregateType, String eventType, String payload, boolean published) {
         OutboxEventEntity outboxEvent = new OutboxEventEntity();
+        outboxEvent.id = id;
         outboxEvent.aggregateId = aggregateId;
         outboxEvent.aggregateType = aggregateType;
         outboxEvent.eventType = eventType;

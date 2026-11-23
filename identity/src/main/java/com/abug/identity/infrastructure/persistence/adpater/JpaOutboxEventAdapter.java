@@ -1,7 +1,10 @@
-package com.abug.identity.infrastructure.persistence;
+package com.abug.identity.infrastructure.persistence.adpater;
 
 import com.abug.identity.application.port.out.OutboxRepository;
 import com.abug.identity.domain.OutboxEvent;
+import com.abug.identity.infrastructure.persistence.IdentityPersistenceMapper;
+import com.abug.identity.infrastructure.persistence.entity.OutboxEventEntity;
+import com.abug.identity.infrastructure.persistence.repository.OutboxEventJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

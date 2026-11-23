@@ -1,23 +1,24 @@
 package com.abug.identity.infrastructure.persistence;
 
 import com.abug.identity.domain.*;
+import com.abug.identity.infrastructure.persistence.entity.*;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
-final class IdentityPersistenceMapper {
+public class IdentityPersistenceMapper {
     private IdentityPersistenceMapper() {
     }
 
-    static Permission domain(PermissionEntity entity) {
+    public static Permission domain(PermissionEntity entity) {
         return Permission.create(entity.getName(), entity.getDescription());
     }
 
-    static PermissionEntity entity(Permission permission) {
+    public static PermissionEntity entity(Permission permission) {
         return new PermissionEntity(permission.getName(), permission.getDescription());
     }
 
-    static Role domain(RoleEntity entity) {
+    public static Role domain(RoleEntity entity) {
         Set<Permission> permissions = entity.getPermissions() == null
                 ? Set.of()
                 : entity.getPermissions().stream()
@@ -26,7 +27,7 @@ final class IdentityPersistenceMapper {
         return Role.create(entity.getName(), entity.getDescription(), permissions);
     }
 
-    static RoleEntity entity(Role role) {
+    public static RoleEntity entity(Role role) {
         Set<PermissionEntity> permissions = role.getPermissions() == null
                 ? Set.of()
                 : role.getPermissions().stream()
@@ -35,7 +36,7 @@ final class IdentityPersistenceMapper {
         return new RoleEntity(role.getName(), role.getDescription(), permissions);
     }
 
-    static User domain(UserEntity entity) {
+    public static User domain(UserEntity entity) {
         Set<Role> roles = entity.getRoles() == null
                 ? Set.of()
                 : entity.getRoles().stream()
@@ -50,7 +51,7 @@ final class IdentityPersistenceMapper {
                 roles);
     }
 
-    static UserEntity entity(User user) {
+    public static UserEntity entity(User user) {
         Set<RoleEntity> roles = user.getRoles() == null
                 ? Set.of()
                 : user.getRoles().stream()
@@ -65,22 +66,22 @@ final class IdentityPersistenceMapper {
                 roles);
     }
 
-    static InvalidatedTokenEntity entity(InvalidatedToken invalidatedToken){
+    public static InvalidatedTokenEntity entity(InvalidatedToken invalidatedToken){
         return new InvalidatedTokenEntity(
                 invalidatedToken.getId(),
                 invalidatedToken.getExpiryTime()
         );
     }
 
-    static InvalidatedToken domain(InvalidatedTokenEntity entity){
+    public static InvalidatedToken domain(InvalidatedTokenEntity entity){
         return InvalidatedToken.create(entity.getId(), entity.getExpiryTime());
     }
 
-    static OutboxEventEntity entity(OutboxEvent outboxEvent){
-        return OutboxEventEntity.create(outboxEvent.getAggregateId(), outboxEvent.getAggregateType(), outboxEvent.getPayload(), outboxEvent.getEventType(), outboxEvent.isPublished());
+    public static OutboxEventEntity entity(OutboxEvent outboxEvent){
+        return OutboxEventEntity.create(outboxEvent.getId().value(), outboxEvent.getAggregateId(), outboxEvent.getAggregateType(), outboxEvent.getEventType(), outboxEvent.getPayload(), outboxEvent.isPublished());
     }
 
-    static OutboxEvent domain(OutboxEventEntity entity){
-        return OutboxEvent.create(entity.getAggregateId(), entity.getAggregateType(), entity.getEventType(), entity.getPayload(), entity.isPublished());
+    public static OutboxEvent domain(OutboxEventEntity entity){
+        return OutboxEvent.create(EventId.of(entity.getId()), entity.getAggregateId(), entity.getAggregateType(), entity.getEventType(), entity.getPayload(), entity.isPublished());
     }
 }

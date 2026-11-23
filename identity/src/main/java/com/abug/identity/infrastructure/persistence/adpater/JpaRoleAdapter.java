@@ -1,7 +1,10 @@
-package com.abug.identity.infrastructure.persistence;
+package com.abug.identity.infrastructure.persistence.adpater;
 
 import com.abug.identity.application.port.out.RoleRepository;
 import com.abug.identity.domain.Role;
+import com.abug.identity.infrastructure.persistence.IdentityPersistenceMapper;
+import com.abug.identity.infrastructure.persistence.repository.RoleJpaRepository;
+import com.abug.identity.infrastructure.persistence.entity.RoleEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

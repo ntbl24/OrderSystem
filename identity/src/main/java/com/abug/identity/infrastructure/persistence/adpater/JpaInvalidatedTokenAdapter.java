@@ -1,7 +1,9 @@
-package com.abug.identity.infrastructure.persistence;
+package com.abug.identity.infrastructure.persistence.adpater;
 
 import com.abug.identity.application.port.out.InvalidatedTokenRepository;
 import com.abug.identity.domain.InvalidatedToken;
+import com.abug.identity.infrastructure.persistence.IdentityPersistenceMapper;
+import com.abug.identity.infrastructure.persistence.repository.InvalidatedTokenJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

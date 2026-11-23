@@ -1,16 +1,22 @@
 spring:
   application:
     name: notification-service
-  data:
-    mongodb:
-      uri: mongodb://root:root@localhost:27017/notification-service?authSource=admin
-  kakfa:
+  datasource:
+    url: "jdbc:postgresql://localhost:3306/notification"
+    username: "root"
+    password: "root"
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  kafka:
     bootstrap-servers: localhost:9094
     consumer:
       group-id: notification-group
+      enable-auto-commit: false
       auto-offset-reset: earliest
-      key-serializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-serializer: org.apache.kafka.common.serialization.JsonDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
         enble.idempotence: true
@@ -21,6 +27,6 @@ server:
 notification:
   email:
     brevo-url: https://api.brevo.com
-    brevo-apikey: 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
+    brevo-apikey: ${BREVO_API_KEY}
     sender-email: nhokthanh3211@gmail.com
     sender-name: MABB DotCom
