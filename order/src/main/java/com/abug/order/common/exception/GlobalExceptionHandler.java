@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> conflict(Exception exception) {
         return ResponseEntity.status(ErrorCode.IDEMPOTENCY_CONFLICT.getHttpStatus()).body(ApiResponse.error(
                 ErrorCode.IDEMPOTENCY_CONFLICT.getCode(),
-                "Conflicting or concurrent operation; retry with the same idempotency key"
+                "Conflicting or concurrent operation;"
         ));
     }
 

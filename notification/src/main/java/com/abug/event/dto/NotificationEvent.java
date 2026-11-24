@@ -12,6 +12,8 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class NotificationEvent {
+    private String eventId;
+
     private String channel;
     private String recipient;
     private String templateCode;

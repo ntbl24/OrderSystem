@@ -10,11 +10,9 @@ import com.abug.identity.application.port.out.UserRepository;
 import com.abug.identity.common.constant.PredefinedRole;
 import com.abug.identity.common.exception.AppException;
 import com.abug.identity.common.exception.ErrorCode;
-import com.abug.identity.domain.OutboxEvent;
-import com.abug.identity.domain.Role;
-import com.abug.identity.domain.User;
-import com.abug.identity.domain.UserId;
+import com.abug.identity.domain.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +25,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService implements UserUseCase {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -37,7 +36,6 @@ public class UserService implements UserUseCase {
     @Override
     @Transactional
     public User create(CreateUserCommand command) {
-
         if (userRepository.existsByUsername(command.username())) throw new AppException(ErrorCode.USER_EXISTED);
 
         HashSet<Role> roles = new HashSet<>();
@@ -47,18 +45,21 @@ public class UserService implements UserUseCase {
 
         User newUser = userRepository.save(user);
 
+        EventId eventId = EventId.generate();
+
         NotificationEvent notificationEvent = NotificationEvent.builder()
+                .eventId(eventId.toString())
                 .channel("EMAIL")
                 .recipient(user.getEmail())
                 .subject("Welcome to MABB")
                 .body("Hello, " + user.getUserName())
                 .build();
 
-        OutboxEvent outboxEvent = OutboxEvent.create(user.getId().value(), "User", "UserCreated", objectMapper.writeValueAsString(notificationEvent), false);
+        OutboxEvent outboxEvent = OutboxEvent.create(eventId, user.getId().value(), "User", "UserCreated", objectMapper.writeValueAsString(notificationEvent), false);
 
         outboxRepository.save(outboxEvent);
 
-        return newUser;
+        return user;
     }
 
     @Override
