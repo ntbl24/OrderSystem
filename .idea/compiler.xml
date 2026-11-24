@@ -26,7 +26,7 @@
         <module name="gateway" />
         <module name="order" />
       </profile>
-      <profile name="Annotation profile for file-service" enabled="true">
+      <profile name="Annotation profile for profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -35,8 +35,10 @@
         </processorPath>
         <module name="notification" />
         <module name="product" />
-        <module name="file-service" />
         <module name="identity" />
+        <module name="profile" />
+        <module name="chat-service" />
+        <module name="file-service" />
         <module name="cart" />
       </profile>
     </annotationProcessing>
@@ -45,6 +47,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="backend" options="-parameters" />
       <module name="cart" options="-parameters" />
+      <module name="chat-service" options="-parameters" />
       <module name="file-service" options="-parameters" />
       <module name="gateway" options="-parameters" />
       <module name="identity" options="-parameters" />
@@ -52,6 +55,7 @@
       <module name="order" options="-parameters" />
       <module name="payment" options="-parameters" />
       <module name="product" options="-parameters" />
+      <module name="profile" options="-parameters" />
       <module name="shipment" options="-parameters" />
     </option>
   </component>

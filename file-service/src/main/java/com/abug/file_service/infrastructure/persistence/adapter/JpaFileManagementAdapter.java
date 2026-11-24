@@ -4,7 +4,6 @@ import com.abug.file_service.application.port.out.FileManagementRepository;
 import com.abug.file_service.domain.FileId;
 import com.abug.file_service.domain.FileManagement;
 import com.abug.file_service.infrastructure.persistence.FileManagementMapper;
-import com.abug.file_service.infrastructure.persistence.entity.FileManagementEntity;
 import com.abug.file_service.infrastructure.persistence.repository.FileManagementMongoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -18,7 +17,7 @@ public class JpaFileManagementAdapter implements FileManagementRepository {
 
     @Override
     public FileManagement save(FileManagement file) {
-        return FileManagementMapper.domain(repository.save(FileManagementMapper.entity(file)));
+        return FileManagementMapper.domain(repository.save(FileManagementMapper.document(file)));
     }
 
     @Override

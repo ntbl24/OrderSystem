@@ -10,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ecommerce:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U root -d identity"]
       interval: 5s
@@ -33,6 +33,20 @@ services:
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
       - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
       - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+  mongodb:
+    image: bitnami/mongodb:latest
+    container_name: mongodb
+    restart: always
+    ports:
+      - '27017:27017'
+    environment:
+      MONGODB_ROOT_USER : root
+      MONGODB_ROOT_PASSWORD: root
+    volumes:
+      - mongodb_data:/bitnami/mongodb
 volumes:
-  ecommerce:
-    name: ecommerce
+  postgres_data:
+    name: ecommerce_postgres
+  mongodb_data:
+    name: ecommerce_mongodb
+

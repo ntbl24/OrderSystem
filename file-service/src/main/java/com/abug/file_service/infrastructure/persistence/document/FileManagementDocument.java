@@ -1,4 +1,4 @@
-package com.abug.file_service.infrastructure.persistence.entity;
+package com.abug.file_service.infrastructure.persistence.document;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Document(collection = "file_management")
-public class FileManagementEntity {
+public class FileManagementDocument {
     @MongoId
     UUID id;
     UUID ownerId;
