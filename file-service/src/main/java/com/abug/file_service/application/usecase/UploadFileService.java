@@ -3,6 +3,7 @@ package com.abug.file_service.application.usecase;
 import com.abug.file_service.application.dto.FileInfo;
 import com.abug.file_service.application.dto.UploadFileResult;
 import com.abug.file_service.application.port.in.UploadFileUseCase;
+import com.abug.file_service.application.port.out.CurrentUserPort;
 import com.abug.file_service.application.port.out.FileManagementRepository;
 import com.abug.file_service.application.port.out.FileStoragePort;
 import com.abug.file_service.domain.FileManagement;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +25,12 @@ public class UploadFileService implements UploadFileUseCase {
 
     private final FileManagementRepository fileManagementRepository;
     private final FileStoragePort fileStoragePort;
+    private final CurrentUserPort currentUserPort;
 
     @Override
     public UploadFileResult uploadFile(MultipartFile file) {
 
-        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        UUID userId = currentUserPort.currentUserId();
 
         FileId fileId = FileId.generate();
 

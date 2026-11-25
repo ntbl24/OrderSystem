@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/internal/profiles")
+@RequestMapping("/internal")
 @RequiredArgsConstructor
 public class ProfileInternalController {
     private final CreateProfileUseCase createProfileUseCase;

@@ -21,6 +21,7 @@ public enum ErrorCode {
     // 1004: Lỗi không tìm thấy tài nguyên - dùng chung 1 mã 1004 (HTTP 404)
     RESOURCE_NOT_FOUND(-1008, "Resource not found", HttpStatus.NOT_FOUND),
     FILE_NOT_FOUND(-1008, "File not found", HttpStatus.NOT_FOUND),
+    CONVERSATION_NOT_FOUND(-1008, "Conversation not found", HttpStatus.NOT_FOUND),
 
 
     // 1005: Lỗi xung đột / Đã tồn tại / Concurrency - dùng chung 1 mã 1005 (HTTP 409)

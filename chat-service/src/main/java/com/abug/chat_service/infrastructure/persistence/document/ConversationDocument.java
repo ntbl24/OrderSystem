@@ -2,6 +2,9 @@ package com.abug.chat_service.infrastructure.persistence.document;
 
 import com.abug.chat_service.domain.ParticipantInfo;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -14,6 +17,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Document(collection = "conversation")
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ConversationDocument {
     @MongoId
@@ -26,4 +32,11 @@ public class ConversationDocument {
     Instant createdDate;
     @LastModifiedDate
     Instant modifiedDate;
+
+    public ConversationDocument(UUID id, String type, String participantsHash, List<ParticipantInfo> participants) {
+        this.id = id;
+        this.type = type;
+        this.participantsHash = participantsHash;
+        this.participants = participants;
+    }
 }

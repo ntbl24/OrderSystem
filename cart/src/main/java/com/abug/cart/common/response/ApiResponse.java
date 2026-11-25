@@ -51,4 +51,8 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> error(String message) {
         return new ApiResponse<>(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode(), message, null, LocalDateTime.now());
     }
+
+    public T getResult(){
+        return this.data;
+    }
 }

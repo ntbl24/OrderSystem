@@ -7,13 +7,18 @@ public class ParticipantInfo {
     private String lastName;
     private String avatar;
 
-    public ParticipantInfo(UserId userId, String username, String firstName, String lastName, String avatar) {
+    private ParticipantInfo(UserId userId, String username, String firstName, String lastName, String avatar) {
         this.userId = userId;
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;
         this.avatar = avatar;
     }
+
+    public static ParticipantInfo create(UserId userId, String username, String firstName, String lastName, String avatar){
+        return new ParticipantInfo(userId, username, firstName, lastName, avatar);
+    }
+
 
     public UserId getUserId() {
         return userId;

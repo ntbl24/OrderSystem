@@ -12,7 +12,7 @@ import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
-public class JpaFileManagementAdapter implements FileManagementRepository {
+public class FileManagementRepoAdapter implements FileManagementRepository {
     private final FileManagementMongoRepository repository;
 
     @Override

@@ -3,9 +3,15 @@ spring:
     name: chat-service
   mongodb:
     uri: mongodb://root:root@localhost:27017/file-service?authSource=admin
+    auto-index-creation: true
     representation:
       uuid: standard
 server:
   port: 8088
   servlet:
     context-path: /chat
+app:
+  services:
+    profile:
+      url: http://localhost:8089/api/v1/profile
+
