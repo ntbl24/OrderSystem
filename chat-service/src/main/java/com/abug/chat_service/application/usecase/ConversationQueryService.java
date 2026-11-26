@@ -5,7 +5,7 @@ import com.abug.chat_service.application.port.in.ConversationQueryUseCase;
 import com.abug.chat_service.application.port.out.ConversationRepository;
 import com.abug.chat_service.application.port.out.CurrentUserPort;
 import com.abug.chat_service.domain.Conversation;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

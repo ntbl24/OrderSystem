@@ -7,6 +7,7 @@ import java.util.Optional;
 import io.order.backend.order.domain.Order;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.order.domain.OrderNumber;
+import io.order.backend.order.domain.OrderStatus;
 import io.order.backend.user.domain.UserId;
 
 public interface OrderRepository {
@@ -14,7 +15,7 @@ public interface OrderRepository {
 
     Optional<Order> findByOrderNumber(OrderNumber orderNumber);
 
-    List<Order> findByOrderStatus(String status);
+    List<Order> findByOrderStatus(OrderStatus status);
 
     Order save(Order order);
 

@@ -8,9 +8,8 @@ import com.abug.chat_service.application.port.out.CurrentUserPort;
 import com.abug.chat_service.application.port.out.ProfileUserPort;
 import com.abug.chat_service.domain.Conversation;
 import com.abug.chat_service.domain.ParticipantInfo;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.UserId;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

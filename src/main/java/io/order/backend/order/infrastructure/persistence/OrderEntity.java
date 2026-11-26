@@ -1,5 +1,8 @@
 package io.order.backend.order.infrastructure.persistence;
 
+import io.order.backend.order.domain.OrderStatus;
+import io.order.backend.order.domain.PaymentStatus;
+import io.order.backend.order.domain.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -41,8 +44,12 @@ public class OrderEntity {
     @Column(length = 2000)
     private String shippingAddress;
     private String paymentMethod;
-    private String paymentStatus;
-    private String orderStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private PaymentStatus paymentStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private OrderStatus orderStatus;
     private LocalDateTime orderDate;
     private LocalDateTime estimatedDeliveryDate;
     @Column(length = 2000)
@@ -51,11 +58,13 @@ public class OrderEntity {
     private Instant expiresAt;
     private UUID paymentId;
     private UUID reviewPaymentId;
-    private String reservationStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 32)
+    private ReservationStatus reservationStatus;
     @Version
     private Long version;
 
-    OrderEntity(UUID id,UUID userId,String orderNumber,BigDecimal subtotal,BigDecimal shippingCost,String shippingAddress,String paymentMethod,String paymentStatus,String orderStatus,LocalDateTime orderDate,LocalDateTime estimatedDeliveryDate,String notes,String sellerId,Instant expiresAt,UUID paymentId,UUID reviewPaymentId,String reservationStatus){
+    OrderEntity(UUID id,UUID userId,String orderNumber,BigDecimal subtotal,BigDecimal shippingCost,String shippingAddress,String paymentMethod,PaymentStatus paymentStatus,OrderStatus orderStatus,LocalDateTime orderDate,LocalDateTime estimatedDeliveryDate,String notes,String sellerId,Instant expiresAt,UUID paymentId,UUID reviewPaymentId,ReservationStatus reservationStatus){
         this.id = id;
         this.userId = userId;
         this.orderNumber = orderNumber;
@@ -82,8 +91,8 @@ public class OrderEntity {
         BigDecimal shippingCost,
         String shippingAddress,
         String paymentMethod,
-        String paymentStatus,
-        String orderStatus,
+        PaymentStatus paymentStatus,
+        OrderStatus orderStatus,
         LocalDateTime orderDate,
         LocalDateTime estimatedDeliveryDate,
         String notes,
@@ -91,7 +100,7 @@ public class OrderEntity {
         Instant expiresAt,
         UUID paymentId,
         UUID reviewPaymentId,
-        String reservationStatus
+        ReservationStatus reservationStatus
     ){
         this.userId = userId;
         this.orderNumber = orderNumber;

@@ -1,11 +1,11 @@
 package com.abug.order.application.usecase;
 
-import com.abug.common.exception.AppException;
-import com.abug.common.exception.ErrorCode;
 import com.abug.order.application.port.in.PayableOrderUseCase;
 import com.abug.order.application.port.out.OrderRepository;
-import com.abug.order.domain.OrderId;
-import com.abug.user.domain.UserId;
+import com.abug.order.common.exception.AppException;
+import com.abug.order.common.exception.ErrorCode;
+import com.abug.order.domain.valueobject.OrderId;
+import com.abug.order.domain.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;

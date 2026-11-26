@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: shipment-service
+  datasource:
+    url: "jdbc:/postgresql://localhost:5432/shipment"
+    username: "root"
+    password: "root"
+  jpa:
+    hibernate:
+      ddl-auto: true
+server:
+  port: 8085
+  servlet:
+    context-path: /shipment

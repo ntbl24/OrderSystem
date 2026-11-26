@@ -1,6 +1,6 @@
 package com.abug.product.infrastructure.web.dto;
 
-import com.abug.product.application.port.in.ProductCommand;
+import com.abug.product.application.port.in.command.ProductCommand;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

@@ -4,7 +4,7 @@ import com.abug.chat_service.application.port.in.ChatMessageQueryUseCase;
 import com.abug.chat_service.application.port.in.CreateChatMessageUseCase;
 import com.abug.chat_service.application.port.in.command.CreateChatMessageCommand;
 import com.abug.chat_service.common.response.ApiResponse;
-import com.abug.chat_service.domain.ConversationId;
+import com.abug.chat_service.domain.valueobject.ConversationId;
 import com.abug.chat_service.infrastructure.web.rest.controller.dto.ChatMessageRequest;
 import com.abug.chat_service.infrastructure.web.rest.controller.dto.ChatMessageResponse;
 import jakarta.validation.Valid;

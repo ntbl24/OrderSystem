@@ -2,7 +2,7 @@ package com.abug.chat_service.infrastructure.web.rest.controller.dto;
 
 import com.abug.chat_service.application.port.in.command.CreateConversationCommand;
 import com.abug.chat_service.domain.ConversationType;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.UserId;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 

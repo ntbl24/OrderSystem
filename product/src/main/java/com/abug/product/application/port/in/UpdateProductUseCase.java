@@ -1,5 +1,6 @@
 package com.abug.product.application.port.in;
 
+import com.abug.product.application.port.in.command.ProductCommand;
 import com.abug.product.domain.Product;
 import com.abug.product.domain.ProductId;
 

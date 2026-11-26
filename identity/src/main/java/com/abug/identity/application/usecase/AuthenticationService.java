@@ -1,5 +1,6 @@
 package com.abug.identity.application.usecase;
 
+import com.abug.identity.application.dto.IntrospectResult;
 import com.abug.identity.application.port.in.AuthenticationUseCase;
 import com.abug.identity.application.port.in.IntrospectCommand;
 import com.abug.identity.application.port.out.InvalidatedTokenRepository;
@@ -8,6 +9,7 @@ import com.abug.identity.common.exception.AppException;
 import com.abug.identity.common.exception.ErrorCode;
 import com.abug.identity.domain.InvalidatedToken;
 import com.abug.identity.domain.User;
+import com.abug.identity.domain.UserId;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -26,10 +28,7 @@ import org.springframework.util.CollectionUtils;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.Date;
-import java.util.StringJoiner;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -51,14 +50,19 @@ public class AuthenticationService implements AuthenticationUseCase {
     protected long REFRESHABLE_DURATION;
 
     @Override
-    public boolean introspect(IntrospectCommand command) {
+    public IntrospectResult introspect(IntrospectCommand command) throws ParseException {
         boolean isValid = true;
+        SignedJWT jwt = null;
         try{
-            verifyToken(command.token(), false);
+            jwt = verifyToken(command.token(), false);
         } catch (AppException | JOSEException | ParseException e){
             isValid = false;
         }
-        return isValid;
+        return new IntrospectResult(isValid,
+                Objects.nonNull(jwt)
+                        ? UserId.of(jwt.getJWTClaimsSet().getSubject())
+                        : null
+    );
     }
 
     @Override

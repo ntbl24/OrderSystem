@@ -1,6 +1,6 @@
 package com.abug.product.application.usecase;
 
-import com.abug.product.application.port.in.ProductCommand;
+import com.abug.product.application.port.in.command.ProductCommand;
 import com.abug.product.application.port.in.CreateProductUseCase;
 import com.abug.product.application.port.out.ProductRepository;
 import com.abug.product.common.exception.AppException;

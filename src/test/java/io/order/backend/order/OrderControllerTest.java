@@ -4,6 +4,9 @@ import io.order.backend.order.application.port.in.OrderUseCase;
 import io.order.backend.order.domain.Order;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.order.domain.OrderNumber;
+import io.order.backend.order.domain.PaymentStatus;
+import io.order.backend.order.domain.OrderStatus;
+import io.order.backend.order.domain.ReservationStatus;
 import io.order.backend.order.infrastructure.web.controller.OrderController;
 import io.order.backend.user.domain.UserId;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,8 +38,8 @@ class OrderControllerTest {
         OrderId id = OrderId.of("order-id");
         order = new Order(id, UserId.of(BUYER_ID), OrderNumber.fromOrderId(id),
                 new BigDecimal("100000"), new BigDecimal("30000"), "address", "VNPAY",
-                "UNPAID", "UNPAID", LocalDateTime.of(2026, 10, 22, 10, 0), null, null,
-                "seller", Instant.parse("2026-10-22T05:00:00Z"), null, null, false, "HELD", 1L);
+                PaymentStatus.UNPAID, OrderStatus.UNPAID, LocalDateTime.of(2026, 10, 22, 10, 0), null, null,
+                "seller", Instant.parse("2026-10-22T05:00:00Z"), null, null, false, ReservationStatus.HELD, 1L);
     }
 
     @Test

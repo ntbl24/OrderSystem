@@ -22,6 +22,8 @@ import io.order.backend.order.application.port.out.OrderRepository;
 import io.order.backend.order.domain.Order;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.order.domain.OrderItem;
+import io.order.backend.order.domain.OrderStatus;
+import io.order.backend.order.domain.ReservationStatus;
 import io.order.backend.payment.domain.PaymentId;
 import io.order.backend.product.domain.ProductId;
 
@@ -50,8 +52,8 @@ class PaymentEventServiceTest {
     @Test
     void paymentSucceeded_whenDeliveredTwice_consumesReservationOnce() {
         when(order.acceptPayment(any(), any(), any(), any())).thenReturn(true, false);
-        when(order.getOrderStatus()).thenReturn("PAID");
-        when(order.requiresReservationTransition("CONSUMED")).thenReturn(true);
+        when(order.getOrderStatus()).thenReturn(OrderStatus.PAID);
+        when(order.requiresReservationTransition(ReservationStatus.CONSUMED)).thenReturn(true);
         when(order.getItems()).thenReturn(List.of(new OrderItem(PRODUCT_ID, "Product", "SKU", 1,
                 new BigDecimal("100000"))));
 
@@ -59,16 +61,16 @@ class PaymentEventServiceTest {
         service.paymentSucceeded(EVENT);
 
         verify(inventory).settle(List.of(new InventoryPort.Line(PRODUCT_ID, 1)), "CONSUMED");
-        verify(order).transitionReservation("CONSUMED");
+        verify(order).transitionReservation(ReservationStatus.CONSUMED);
         verify(orders, times(2)).save(order);
     }
 
     @Test
     void paymentSucceeded_whenOrderExpired_releasesReservationForReview() {
         when(order.acceptPayment(any(), any(), any(), any())).thenReturn(false);
-        when(order.getOrderStatus()).thenReturn("PAYMENT_REVIEW");
-        when(order.getReservationStatus()).thenReturn("HELD", "RELEASED");
-        when(order.requiresReservationTransition("RELEASED")).thenReturn(true, false);
+        when(order.getOrderStatus()).thenReturn(OrderStatus.PAYMENT_REVIEW);
+        when(order.getReservationStatus()).thenReturn(ReservationStatus.HELD, ReservationStatus.RELEASED);
+        when(order.requiresReservationTransition(ReservationStatus.RELEASED)).thenReturn(true, false);
         when(order.getItems()).thenReturn(List.of(new OrderItem(PRODUCT_ID, "Product", "SKU", 1,
                 new BigDecimal("100000"))));
 
@@ -76,7 +78,7 @@ class PaymentEventServiceTest {
         service.paymentSucceeded(EVENT);
 
         verify(inventory).settle(List.of(new InventoryPort.Line(PRODUCT_ID, 1)), "RELEASED");
-        verify(order).transitionReservation("RELEASED");
+        verify(order).transitionReservation(ReservationStatus.RELEASED);
         verify(orders, times(2)).save(order);
     }
 
@@ -84,9 +86,9 @@ class PaymentEventServiceTest {
     void paymentRefunded_whenDeliveredTwice_returnsConsumedStockOnce() {
         when(order.acceptPayment(any(), any(), any(), any())).thenReturn(true, false);
         when(order.acceptRefund(any(), any(), any())).thenReturn(true, false);
-        when(order.getReservationStatus()).thenReturn("CONSUMED");
-        when(order.requiresReservationTransition("CONSUMED")).thenReturn(true);
-        when(order.requiresReservationTransition("RETURNED")).thenReturn(true);
+        when(order.getReservationStatus()).thenReturn(ReservationStatus.CONSUMED);
+        when(order.requiresReservationTransition(ReservationStatus.CONSUMED)).thenReturn(true);
+        when(order.requiresReservationTransition(ReservationStatus.RETURNED)).thenReturn(true);
         when(order.getItems()).thenReturn(List.of(new OrderItem(PRODUCT_ID, "Product", "SKU", 1,
                 new BigDecimal("100000"))));
 
@@ -96,8 +98,8 @@ class PaymentEventServiceTest {
 
         verify(inventory).settle(List.of(new InventoryPort.Line(PRODUCT_ID, 1)), "CONSUMED");
         verify(inventory).settle(List.of(new InventoryPort.Line(PRODUCT_ID, 1)), "RETURNED");
-        verify(order).transitionReservation("CONSUMED");
-        verify(order).transitionReservation("RETURNED");
+        verify(order).transitionReservation(ReservationStatus.CONSUMED);
+        verify(order).transitionReservation(ReservationStatus.RETURNED);
         verify(orders, times(3)).save(order);
     }
 }

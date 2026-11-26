@@ -1,8 +1,8 @@
 package com.abug.chat_service.application.port.out;
 
 import com.abug.chat_service.domain.Conversation;
-import com.abug.chat_service.domain.ConversationId;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.ConversationId;
+import com.abug.chat_service.domain.valueobject.UserId;
 
 import java.util.List;
 import java.util.Optional;

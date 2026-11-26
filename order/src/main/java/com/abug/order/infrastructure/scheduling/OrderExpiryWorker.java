@@ -3,7 +3,7 @@ package com.abug.order.infrastructure.scheduling;
 import com.abug.order.application.port.in.ExpireOrderUseCase;
 
 import com.abug.order.application.port.out.OrderRepository;
-import com.abug.order.domain.OrderId;
+import com.abug.order.domain.valueobject.OrderId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -17,7 +17,7 @@ public class OrderExpiryWorker {
     private final OrderRepository orders;
     private final ExpireOrderUseCase expiry;
 
-    @Scheduled(fixedDelayString = "${purchase.expiry-delay-ms:30000}")
+    @Scheduled(fixedDelay = 30000)
     public void expire() {
         for (OrderId id : orders.expiredIds(Instant.now()))
             expiry.expire(id);

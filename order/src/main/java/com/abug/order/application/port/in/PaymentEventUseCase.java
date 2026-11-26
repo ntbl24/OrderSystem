@@ -2,8 +2,8 @@ package com.abug.order.application.port.in;
 
 import java.math.BigDecimal;
 
-import com.abug.order.domain.OrderId;
-import com.abug.payment.domain.PaymentId;
+import com.abug.order.domain.valueobject.OrderId;
+import com.abug.order.domain.valueobject.PaymentId;
 
 public interface PaymentEventUseCase {
     void paymentSucceeded(PaymentEvent event);

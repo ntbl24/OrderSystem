@@ -1,7 +1,7 @@
 package com.abug.product.infrastructure.web.dto;
 
 import com.abug.product.application.port.in.ProductStockUseCase;
-import com.abug.product.application.port.in.SettleCommand;
+import com.abug.product.application.port.in.command.SettleCommand;
 import com.abug.product.common.constant.StockAction;
 import com.abug.product.domain.OrderId;
 import com.abug.product.domain.ProductId;

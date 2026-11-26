@@ -1,5 +1,6 @@
 package io.order.backend.order.infrastructure.persistence;
 
+import io.order.backend.order.domain.OrderStatus;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
@@ -15,7 +16,7 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
 
     Optional<OrderEntity> findByOrderNumber(String number);
 
-    List<OrderEntity> findTop100ByOrderStatus(String status);
+    List<OrderEntity> findTop100ByOrderStatus(OrderStatus status);
 
-    List<OrderEntity> findTop100ByOrderStatusAndExpiresAtLessThanEqualOrderById(String status, java.time.Instant now);
+    List<OrderEntity> findTop100ByOrderStatusAndExpiresAtLessThanEqualOrderById(OrderStatus status, java.time.Instant now);
 }

@@ -9,8 +9,8 @@ import com.abug.chat_service.application.port.out.ProfileUserPort;
 import com.abug.chat_service.common.exception.AppException;
 import com.abug.chat_service.common.exception.ErrorCode;
 import com.abug.chat_service.domain.ChatMessage;
-import com.abug.chat_service.domain.ConversationId;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.ConversationId;
+import com.abug.chat_service.domain.valueobject.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

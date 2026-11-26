@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CartServiceTest {
     @Mock CartRepository carts;
-    @Mock CurrentBuyerPort buyer;
+    @Mock CurrentUserPort buyer;
     @Mock ProductCatalogPort products;
     final UserId user = UserId.generate();
     final ProductId product = ProductId.generate();
@@ -39,7 +39,7 @@ class CartServiceTest {
         commands = new CartCommandService(carts, access);
     }
 
-    void owner() { when(buyer.buyerId()).thenReturn(user.value().toString()); }
+    void owner() { when(buyer.currentUserId()).thenReturn(user.value()); }
     void catalog() {
         when(products.findById(product)).thenReturn(Optional.of(
                 new ProductCatalogPort.Snapshot(product, "Catalog title", new BigDecimal("100"))));
@@ -108,7 +108,7 @@ class CartServiceTest {
 
     @Test
     void operations_whenForeignOwner_shouldHideCartAndNeverWrite() {
-        when(buyer.buyerId()).thenReturn(UserId.generate().value().toString());
+        when(buyer.currentUserId()).thenReturn(UserId.generate().value());
         Cart cart = Cart.create(user);
         when(carts.findById(cart.getId())).thenReturn(Optional.of(cart));
         assertCartNotFound(() -> queries.getCartById(cart.getId()));

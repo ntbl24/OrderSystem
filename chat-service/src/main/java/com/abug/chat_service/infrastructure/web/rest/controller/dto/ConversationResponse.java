@@ -4,7 +4,8 @@ import com.abug.chat_service.application.dto.CreateConversationResult;
 import com.abug.chat_service.application.dto.QueryConversationResult;
 import com.abug.chat_service.domain.Conversation;
 import com.abug.chat_service.domain.ParticipantInfo;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.ConversationType;
+import com.abug.chat_service.domain.valueobject.UserId;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.Optional;
 
 public record ConversationResponse(
         String id,
-        String type,
+        ConversationType type,
         String participantsHash,
         String conversationAvatar,
         String conversationName,
@@ -35,7 +36,7 @@ public record ConversationResponse(
 
         return new ConversationResponse(
                 conversation.getId().toString(),
-                conversation.getType().toString(),
+                conversation.getType(),
                 conversation.getParticipantsHash(),
                 firstParticipant.map(ParticipantInfo::getAvatar).orElse(null),
                 firstParticipant.map(ParticipantInfo::getUsername).orElse(null),

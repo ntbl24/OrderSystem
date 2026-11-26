@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import io.order.backend.order.domain.Order;
+import io.order.backend.order.domain.OrderStatus;
+import io.order.backend.order.domain.PaymentStatus;
 import lombok.Data;
 
 @Data
@@ -21,8 +23,8 @@ public class OrderResponse {
     private String shippingAddress;
     private String paymentMethod;
     
-    private String paymentStatus;
-    private String orderStatus;
+    private PaymentStatus paymentStatus;
+    private OrderStatus orderStatus;
     private LocalDateTime orderDate;
     private LocalDateTime estimatedDeliveryDate;
     private String notes;

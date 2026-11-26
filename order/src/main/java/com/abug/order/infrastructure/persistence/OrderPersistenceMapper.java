@@ -1,13 +1,14 @@
 package com.abug.order.infrastructure.persistence;
 
 import com.abug.order.domain.*;
-import com.abug.payment.domain.PaymentId;
-import com.abug.product.domain.ProductId;
-import com.abug.user.domain.UserId;
+import com.abug.order.domain.valueobject.OrderId;
+import com.abug.order.domain.valueobject.OrderNumber;
+import com.abug.order.domain.valueobject.PaymentId;
+import com.abug.order.domain.valueobject.ProductId;
 
 public final class OrderPersistenceMapper {
     public static Order domain(OrderEntity e) {
-        Order d = new Order(
+        Order d = Order.reconstitute(
             OrderId.of(e.getId()),
             UserId.of(e.getUserId()),
             OrderNumber.of(e.getOrderNumber()),

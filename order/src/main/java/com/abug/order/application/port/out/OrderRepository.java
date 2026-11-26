@@ -5,16 +5,17 @@ import java.util.List;
 import java.util.Optional;
 
 import com.abug.order.domain.Order;
-import com.abug.order.domain.OrderId;
-import com.abug.order.domain.OrderNumber;
-import com.abug.user.domain.UserId;
+import com.abug.order.domain.valueobject.OrderId;
+import com.abug.order.domain.valueobject.OrderNumber;
+import com.abug.order.domain.OrderStatus;
+import com.abug.order.domain.UserId;
 
 public interface OrderRepository {
     List<Order> findByUserId(UserId userId);
 
     Optional<Order> findByOrderNumber(OrderNumber orderNumber);
 
-    List<Order> findByOrderStatus(String status);
+    List<Order> findByOrderStatus(OrderStatus status);
 
     Order save(Order order);
 

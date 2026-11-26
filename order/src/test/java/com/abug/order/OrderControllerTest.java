@@ -1,11 +1,15 @@
 package com.abug.order;
 
-import com.abug.order.application.port.in.OrderUseCase;
+import com.abug.order.application.port.in.OrderQueryUseCase;
+import com.abug.order.application.port.in.UpdateOrderUseCase;
 import com.abug.order.domain.Order;
-import com.abug.order.domain.OrderId;
-import com.abug.order.domain.OrderNumber;
+import com.abug.order.domain.valueobject.OrderId;
+import com.abug.order.domain.valueobject.OrderNumber;
+import com.abug.order.domain.UserId;
+import com.abug.order.domain.PaymentStatus;
+import com.abug.order.domain.OrderStatus;
+import com.abug.order.domain.ReservationStatus;
 import com.abug.order.infrastructure.web.controller.OrderController;
-import com.abug.user.domain.UserId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +29,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class OrderControllerTest {
     private static final String BUYER_ID = "00000000-0000-0000-0000-000000000001";
 
-    @Mock OrderUseCase orders;
+    @Mock
+    OrderQueryUseCase orders;
+    UpdateOrderUseCase updateOrderUseCase;
     MockMvc mvc;
     Order order;
 
@@ -35,8 +41,8 @@ class OrderControllerTest {
         OrderId id = OrderId.of("order-id");
         order = new Order(id, UserId.of(BUYER_ID), OrderNumber.fromOrderId(id),
                 new BigDecimal("100000"), new BigDecimal("30000"), "address", "VNPAY",
-                "UNPAID", "UNPAID", LocalDateTime.of(2026, 10, 22, 10, 0), null, null,
-                "seller", Instant.parse("2026-10-22T05:00:00Z"), null, null, false, "HELD", 1L);
+                PaymentStatus.UNPAID, OrderStatus.UNPAID, LocalDateTime.of(2026, 10, 22, 10, 0), null, null,
+                "seller", Instant.parse("2026-10-22T05:00:00Z"), null, null, false, ReservationStatus.HELD, 1L);
     }
 
     @Test
@@ -62,7 +68,7 @@ class OrderControllerTest {
     void orderNumberUserListAndCancel_preserveRoutesAndResponseMapping() throws Exception {
         when(orders.getOrderByOrderNumber(order.getOrderNumber())).thenReturn(order);
         when(orders.getOrdersByUserId(order.getUserId())).thenReturn(List.of(order));
-        when(orders.cancel(order.getId())).thenAnswer(call -> {
+        when(updateOrderUseCase.cancelOrder(order.getId())).thenAnswer(call -> {
             order.cancel();
             return order;
         });
@@ -73,6 +79,6 @@ class OrderControllerTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").value(order.getId().toString()));
         mvc.perform(post("/api/v1/orders/{id}/cancel", order.getId().toString()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.orderStatus").value("CANCELLED"));
-        verify(orders).cancel(order.getId());
+        verify(updateOrderUseCase).cancelOrder(order.getId());
     }
 }

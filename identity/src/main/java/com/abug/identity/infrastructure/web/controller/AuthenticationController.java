@@ -1,5 +1,6 @@
 package com.abug.identity.infrastructure.web.controller;
 
+import com.abug.identity.application.dto.IntrospectResult;
 import com.abug.identity.application.port.in.AuthenticationUseCase;
 import com.abug.identity.common.response.ApiResponse;
 import com.abug.identity.infrastructure.web.dto.*;
@@ -26,9 +27,9 @@ public class AuthenticationController {
     }
 
     @PostMapping("/introspect")
-    ApiResponse<IntrospectResponse> authenticate(@RequestBody @Valid IntrospectRequest request) {
-        boolean result = authenticationUseCase.introspect(request.toCommand());
-        return ApiResponse.success(new IntrospectResponse(result));
+    ApiResponse<IntrospectResponse> authenticate(@RequestBody @Valid IntrospectRequest request) throws ParseException {
+        IntrospectResult result = authenticationUseCase.introspect(request.toCommand());
+        return ApiResponse.success(IntrospectResponse.from(result));
     }
 
     @PostMapping("/refresh")

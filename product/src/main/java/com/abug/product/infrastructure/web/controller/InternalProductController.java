@@ -2,7 +2,7 @@ package com.abug.product.infrastructure.web.controller;
 
 import com.abug.product.application.port.in.ProductCatalogQuery;
 import com.abug.product.application.port.in.ProductStockUseCase;
-import com.abug.product.application.port.in.ReserveResult;
+import com.abug.product.application.dto.ReserveResult;
 import com.abug.product.common.response.ApiResponse;
 import com.abug.product.domain.ProductId;
 import com.abug.product.infrastructure.web.dto.ReserveStockRequest;

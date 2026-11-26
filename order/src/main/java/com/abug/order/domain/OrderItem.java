@@ -1,8 +1,9 @@
 package com.abug.order.domain;
 
+import com.abug.order.domain.valueobject.ProductId;
+
 import java.math.BigDecimal;
 
-import com.abug.product.domain.ProductId;
 
 public class OrderItem{
     private ProductId productId;

@@ -1,6 +1,7 @@
 package com.abug.chat_service.infrastructure.persistence.document;
 
 import com.abug.chat_service.domain.ParticipantInfo;
+import com.abug.chat_service.domain.ConversationType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +25,7 @@ import java.util.UUID;
 public class ConversationDocument {
     @MongoId
     UUID id;
-    String type;
+    ConversationType type;
     @Indexed(unique = true)
     String participantsHash;
     List<ParticipantInfo> participants;
@@ -33,7 +34,7 @@ public class ConversationDocument {
     @LastModifiedDate
     Instant modifiedDate;
 
-    public ConversationDocument(UUID id, String type, String participantsHash, List<ParticipantInfo> participants) {
+    public ConversationDocument(UUID id, ConversationType type, String participantsHash, List<ParticipantInfo> participants) {
         this.id = id;
         this.type = type;
         this.participantsHash = participantsHash;

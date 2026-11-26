@@ -1,12 +1,13 @@
 package com.abug.order.infrastructure.persistence;
 
 import com.abug.order.domain.*;
-import com.abug.user.domain.UserId;
 import com.abug.order.application.port.out.OrderRepository;
 
 import java.time.Instant;
 import java.util.*;
 
+import com.abug.order.domain.valueobject.OrderId;
+import com.abug.order.domain.valueobject.OrderNumber;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +28,7 @@ public class JpaOrderAdapter implements OrderRepository {
     }
 
     public void deleteById(OrderId id) {
-        repository.findById(id.value()).ifPresent(e -> e.delete());
+        repository.findById(id.value()).ifPresent(OrderEntity::delete);
     }
 
     public Order save(Order d) {
@@ -52,12 +53,13 @@ public class JpaOrderAdapter implements OrderRepository {
         return repository.findByOrderNumber(number.value()).map(OrderPersistenceMapper::domain);
     }
 
-    public List<Order> findByOrderStatus(String status) {
+    public List<Order> findByOrderStatus(OrderStatus status) {
         return repository.findTop100ByOrderStatus(status).stream().map(OrderPersistenceMapper::domain).toList();
     }
 
     public List<OrderId> expiredIds(Instant now) {
-        return repository.findTop100ByOrderStatusAndExpiresAtLessThanEqualOrderById("UNPAID", now).stream()
+        return repository.findTop100ByOrderStatusAndExpiresAtLessThanEqualOrderById(OrderStatus.UNPAID, now).stream()
                 .map(e -> OrderId.of(e.getId())).toList();
     }
 }
+

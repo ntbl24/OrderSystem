@@ -1,5 +1,7 @@
 package com.abug.chat_service.domain;
 
+import com.abug.chat_service.domain.valueobject.UserId;
+
 public class ParticipantInfo {
     private UserId userId;
     private String username;

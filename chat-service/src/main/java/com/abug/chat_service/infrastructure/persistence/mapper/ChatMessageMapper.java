@@ -1,10 +1,10 @@
 package com.abug.chat_service.infrastructure.persistence.mapper;
 
 import com.abug.chat_service.domain.ChatMessage;
-import com.abug.chat_service.domain.ConversationId;
-import com.abug.chat_service.domain.MessageId;
+import com.abug.chat_service.domain.valueobject.ConversationId;
+import com.abug.chat_service.domain.valueobject.MessageId;
 import com.abug.chat_service.domain.ParticipantInfo;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.UserId;
 import com.abug.chat_service.infrastructure.persistence.document.ChatMessageDocument;
 import com.abug.chat_service.infrastructure.persistence.document.ParticipantDocument;
 

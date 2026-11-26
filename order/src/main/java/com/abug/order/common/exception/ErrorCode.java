@@ -28,9 +28,7 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(-1008, "Product not found", HttpStatus.NOT_FOUND),
     CART_NOT_FOUND(-1008, "Cart not found", HttpStatus.NOT_FOUND),
     ORDER_NOT_FOUND(-1008, "Order not found", HttpStatus.NOT_FOUND),
-    PAYMENT_NOT_FOUND(-1008, "Payment not found", HttpStatus.NOT_FOUND),
     USER_NOT_FOUND(-1008, "User not found", HttpStatus.NOT_FOUND),
-    SHIPMENT_NOT_FOUND(-1008, "Shipment not found", HttpStatus.NOT_FOUND),
 
     // 1005: Lỗi xung đột / Đã tồn tại / Concurrency - dùng chung 1 mã 1005 (HTTP 409)
     CONFLICT(-1009, "Conflicting operation", HttpStatus.CONFLICT),

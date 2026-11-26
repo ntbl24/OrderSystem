@@ -8,6 +8,7 @@ import io.order.backend.order.application.port.in.OrderUseCase;
 import io.order.backend.order.domain.Order;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.order.domain.OrderNumber;
+import io.order.backend.order.domain.ReservationStatus;
 import io.order.backend.user.domain.UserId;
 import io.order.backend.order.application.port.out.OrderRepository;
 
@@ -49,7 +50,7 @@ public class OrderService implements OrderUseCase {
     public Order cancel(OrderId id) {
         Order order = owned(orders.lockById(id).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND)));
         order.cancel();
-        InventorySettlement.settle(order, inventory, "RELEASED");
+        InventorySettlement.settle(order, inventory, ReservationStatus.RELEASED);
         return orders.save(order);
     }
 }

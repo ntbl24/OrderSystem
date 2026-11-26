@@ -1,7 +1,7 @@
 package com.abug.notification.infrastructure.web.controller;
 
 import com.abug.event.dto.NotificationEvent;
-import com.abug.notification.application.port.in.DeliverNotificationUseCase;
+import com.abug.notification.application.port.in.ConsumeNotificationUseCase;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class NotificationController {
 
-    private final DeliverNotificationUseCase deliverNotificationUseCase;
+    private final ConsumeNotificationUseCase deliverNotificationUseCase;
 
     @KafkaListener(topics = "notification-delivery")
     public void listenNotificationDelivery(NotificationEvent event){

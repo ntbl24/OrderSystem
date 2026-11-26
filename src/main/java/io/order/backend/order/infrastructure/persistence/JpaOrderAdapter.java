@@ -52,12 +52,12 @@ public class JpaOrderAdapter implements OrderRepository {
         return repository.findByOrderNumber(number.value()).map(OrderPersistenceMapper::domain);
     }
 
-    public List<Order> findByOrderStatus(String status) {
+    public List<Order> findByOrderStatus(OrderStatus status) {
         return repository.findTop100ByOrderStatus(status).stream().map(OrderPersistenceMapper::domain).toList();
     }
 
     public List<OrderId> expiredIds(Instant now) {
-        return repository.findTop100ByOrderStatusAndExpiresAtLessThanEqualOrderById("UNPAID", now).stream()
+        return repository.findTop100ByOrderStatusAndExpiresAtLessThanEqualOrderById(OrderStatus.UNPAID, now).stream()
                 .map(e -> OrderId.of(e.getId())).toList();
     }
 }

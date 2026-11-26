@@ -1,5 +1,8 @@
 package com.abug.chat_service.domain;
 
+import com.abug.chat_service.domain.valueobject.ConversationId;
+import com.abug.chat_service.domain.valueobject.MessageId;
+
 import java.time.Instant;
 
 public class ChatMessage {

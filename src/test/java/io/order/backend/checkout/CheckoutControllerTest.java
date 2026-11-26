@@ -29,6 +29,9 @@ import io.order.backend.checkout.infrastructure.web.controller.CheckoutControlle
 import io.order.backend.order.domain.Order;
 import io.order.backend.order.domain.OrderId;
 import io.order.backend.order.domain.OrderNumber;
+import io.order.backend.order.domain.PaymentStatus;
+import io.order.backend.order.domain.OrderStatus;
+import io.order.backend.order.domain.ReservationStatus;
 import io.order.backend.user.domain.UserId;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,8 +51,8 @@ class CheckoutControllerTest {
         var id = OrderId.of("checkout-order");
         var order = new Order(id, UserId.of("00000000-0000-0000-0000-000000000001"),
                 OrderNumber.fromOrderId(id), new BigDecimal("100000"), new BigDecimal("30000"),
-                "address", "VNPAY", "UNPAID", "UNPAID", LocalDateTime.now(), null, "notes",
-                "seller", Instant.now().plusSeconds(900), null, null, false, "HELD", 1L);
+                "address", "VNPAY", PaymentStatus.UNPAID, OrderStatus.UNPAID, LocalDateTime.now(), null, "notes",
+                "seller", Instant.now().plusSeconds(900), null, null, false, ReservationStatus.HELD, 1L);
         when(checkout.checkout(eq("request-key"), any())).thenReturn(order);
 
         mvc.perform(post("/api/v1/checkouts").header("Idempotency-Key", "request-key")

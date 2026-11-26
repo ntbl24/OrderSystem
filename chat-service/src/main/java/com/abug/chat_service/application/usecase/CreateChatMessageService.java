@@ -12,9 +12,12 @@ import com.abug.chat_service.common.exception.ErrorCode;
 import com.abug.chat_service.domain.ChatMessage;
 import com.abug.chat_service.domain.Conversation;
 import com.abug.chat_service.domain.ParticipantInfo;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.List;
 
 
 @Service
@@ -24,15 +27,18 @@ public class CreateChatMessageService implements CreateChatMessageUseCase {
     private final ConversationRepository conversationRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ProfileUserPort profileUserPort;
+    private final SendMessageService sendMessageService;
+    private final ObjectMapper objectMapper;
 
     @Override
     public CreateChatMessageResult create(CreateChatMessageCommand command) {
         UserId userId = UserId.of(currentUserPort.currentUserId());
-        conversationRepository.findById(command.conversationId())
-                .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND))
-                .getParticipants().stream()
+        Conversation conversation = conversationRepository.findById(command.conversationId())
+                .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+        conversation.getParticipants().stream()
                 .filter(participantInfo -> userId.equals(participantInfo.getUserId()))
-                .findAny().orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
+                .findAny()
+                .orElseThrow(() -> new AppException(ErrorCode.CONVERSATION_NOT_FOUND));
 
         ProfileUserPort.Snapshot userProfile = profileUserPort.getProfile(userId);
 
@@ -40,6 +46,11 @@ public class CreateChatMessageService implements CreateChatMessageUseCase {
 
         ChatMessage chatMessage = ChatMessage.create(command.conversationId(), command.message(), userInfo);
         chatMessage = chatMessageRepository.save(chatMessage);
+        String message = objectMapper.writeValueAsString(chatMessage);
+
+        List<UserId> userIds = conversation.getParticipants().stream().map(ParticipantInfo::getUserId).toList();
+
+        sendMessageService.sendMessageToUserId(userIds, message);
         return new CreateChatMessageResult(userId, chatMessage);
     }
 }

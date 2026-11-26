@@ -2,8 +2,8 @@ package com.abug.chat_service.infrastructure.persistence.adapter;
 
 import com.abug.chat_service.application.port.out.ConversationRepository;
 import com.abug.chat_service.domain.Conversation;
-import com.abug.chat_service.domain.ConversationId;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.ConversationId;
+import com.abug.chat_service.domain.valueobject.UserId;
 import com.abug.chat_service.infrastructure.persistence.mapper.ConversationMapper;
 import com.abug.chat_service.infrastructure.persistence.repository.ConversationMongoRepository;
 import lombok.RequiredArgsConstructor;

@@ -32,7 +32,8 @@ public class UpdateCartService implements UpdateCartUseCase {
     }
 
     public Cart addItemToCart(UserId userId, CartItemData item) {
-        Cart cart = access.byUser(userId);
+        access.owner(userId);
+        Cart cart = carts.findByUserId(userId).orElseGet(() -> Cart.create(userId));
         var p = pricing.product(item.productId());
         cart.addItem(item.productId(), p.title(), item.quantity(), p.price());
         return save(cart);
@@ -41,7 +42,8 @@ public class UpdateCartService implements UpdateCartUseCase {
     public Cart updateItemQuantity(UserId userId, ProductId productId, int quantity) {
         if (quantity < 0 || quantity > 100000)
             throw new AppException(ErrorCode.INVALID_INPUT, "Invalid quantity");
-        Cart cart = access.byUser(userId);
+        access.owner(userId);
+        Cart cart = carts.findByUserId(userId).orElseGet(() -> Cart.create(userId));
         if (quantity == 0) {
             cart.removeItem(productId);
         } else {

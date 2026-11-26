@@ -3,13 +3,12 @@ package com.abug.chat_service.infrastructure.external.httpclient.adapter;
 import com.abug.chat_service.application.port.out.ProfileUserPort;
 import com.abug.chat_service.common.exception.AppException;
 import com.abug.chat_service.common.exception.ErrorCode;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.UserId;
 import com.abug.chat_service.infrastructure.external.httpclient.ProfileClient;
 import com.abug.chat_service.infrastructure.external.httpclient.dto.ProfileUserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Objects;
 
 @Component

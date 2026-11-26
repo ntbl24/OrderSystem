@@ -24,9 +24,8 @@
         <module name="payment" />
         <module name="shipment" />
         <module name="gateway" />
-        <module name="order" />
       </profile>
-      <profile name="Annotation profile for chat-service" enabled="true">
+      <profile name="Annotation profile for order" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -40,6 +39,7 @@
         <module name="chat-service" />
         <module name="file-service" />
         <module name="cart" />
+        <module name="order" />
       </profile>
     </annotationProcessing>
   </component>

@@ -1,15 +1,16 @@
 package com.abug.order.domain;
 
+import com.abug.order.common.exception.AppException;
+import com.abug.order.common.exception.ErrorCode;
+import com.abug.order.domain.valueobject.OrderId;
+import com.abug.order.domain.valueobject.OrderNumber;
+import com.abug.order.domain.valueobject.PaymentId;
+import com.abug.order.domain.valueobject.ProductId;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
-
-import com.abug.common.exception.AppException;
-import com.abug.common.exception.ErrorCode;
-import com.abug.payment.domain.PaymentId;
-import com.abug.product.domain.ProductId;
-import com.abug.user.domain.UserId;
 
 public class Order {
     private OrderId id;
@@ -21,8 +22,8 @@ public class Order {
     private BigDecimal shippingCost;
     private String shippingAddress;
     private String paymentMethod;
-    private String paymentStatus;
-    private String orderStatus;
+    private PaymentStatus paymentStatus;
+    private OrderStatus orderStatus;
     private LocalDateTime orderDate;
     private LocalDateTime estimatedDeliveryDate;
     private String notes;
@@ -31,7 +32,7 @@ public class Order {
     private PaymentId paymentId;
     private PaymentId reviewPaymentId;
     private boolean deleted;
-    private String reservationStatus;
+    private ReservationStatus reservationStatus;
     private Long version;
 
     Order(){}
@@ -44,8 +45,8 @@ public class Order {
             BigDecimal shippingCost,
             String shippingAddress,
             String paymentMethod,
-            String paymentStatus,
-            String orderStatus,
+            PaymentStatus paymentStatus,
+            OrderStatus orderStatus,
             LocalDateTime orderDate,
             LocalDateTime estimatedDeliveryDate,
             String notes,
@@ -54,7 +55,7 @@ public class Order {
             PaymentId paymentId,
             PaymentId reviewPaymentId,
             boolean deleted,
-            String reservationStatus,
+            ReservationStatus reservationStatus,
             Long version) {
         this.id = id;
         this.userId = userId;
@@ -75,6 +76,29 @@ public class Order {
         this.deleted = deleted;
         this.reservationStatus = reservationStatus;
         this.version = version;
+    }
+
+    public static Order reconstitute(OrderId id,
+                               UserId userId,
+                               OrderNumber orderNumber,
+                               BigDecimal subtotal,
+                               BigDecimal shippingCost,
+                               String shippingAddress,
+                               String paymentMethod,
+                               PaymentStatus paymentStatus,
+                               OrderStatus orderStatus,
+                               LocalDateTime orderDate,
+                               LocalDateTime estimatedDeliveryDate,
+                               String notes,
+                               String sellerId,
+                               Instant expiresAt,
+                               PaymentId paymentId,
+                               PaymentId reviewPaymentId,
+                               boolean deleted,
+                               ReservationStatus reservationStatus,
+                               Long version){
+        return new Order(id, userId, orderNumber, subtotal, shippingCost, shippingAddress, paymentMethod,
+                paymentStatus, orderStatus, orderDate, estimatedDeliveryDate, notes, sellerId, expiresAt, paymentId, reviewPaymentId, deleted, reservationStatus, version);
     }
 
     public void addItem(ProductId productId, String productName, String sku, int quantity, BigDecimal unitPrice) {
@@ -116,9 +140,9 @@ public class Order {
         order.shippingAddress = shippingAddress;
         order.notes = notes;
         order.paymentMethod = "VNPAY";
-        order.paymentStatus = "UNPAID";
-        order.orderStatus = "UNPAID";
-        order.reservationStatus = "HELD";
+        order.paymentStatus = PaymentStatus.UNPAID;
+        order.orderStatus = OrderStatus.UNPAID;
+        order.reservationStatus = ReservationStatus.HELD;
         order.orderDate = orderDate;
         order.expiresAt = now.plusSeconds(900);
 
@@ -143,20 +167,21 @@ public class Order {
         return paymentId;
     }
 
-    public String getReservationStatus() {
+    public ReservationStatus getReservationStatus() {
         return reservationStatus;
     }
 
-    public boolean requiresReservationTransition(String target) {
+    public boolean requiresReservationTransition(ReservationStatus target) {
         if (target.equals(reservationStatus))
             return false;
-        if (!("HELD".equals(reservationStatus) && ("RELEASED".equals(target) || "CONSUMED".equals(target)))
-                && !("CONSUMED".equals(reservationStatus) && "RETURNED".equals(target)))
+        if (!((reservationStatus == ReservationStatus.HELD
+                && (target == ReservationStatus.RELEASED || target == ReservationStatus.CONSUMED))
+                || (reservationStatus == ReservationStatus.CONSUMED && target == ReservationStatus.RETURNED)))
             throw new AppException(ErrorCode.INVALID_INPUT, "Invalid inventory transition");
         return true;
     }
 
-    public void transitionReservation(String target) {
+    public void transitionReservation(ReservationStatus target) {
         if (requiresReservationTransition(target))
             reservationStatus = target;
     }
@@ -170,19 +195,19 @@ public class Order {
     }
 
     public boolean unpaid() {
-        return "UNPAID".equals(orderStatus);
+        return orderStatus == OrderStatus.UNPAID;
     }
 
     public void cancel() {
         if (!unpaid())
             throw new AppException(ErrorCode.CONFLICT, "Only unpaid orders can be cancelled");
-        orderStatus = "CANCELLED";
+        orderStatus = OrderStatus.CANCELLED;
     }
 
     public boolean expire(Instant now) {
         if (!unpaid() || expiresAt.isAfter(now))
             return false;
-        orderStatus = "EXPIRED";
+        orderStatus = OrderStatus.EXPIRED;
         return true;
     }
 
@@ -193,24 +218,24 @@ public class Order {
             return false;
         if (!"VND".equals(currency) || amount == null || amount.compareTo(getTotal()) != 0
                 || !unpaid() || !expiresAt.isAfter(now)) {
-            orderStatus = "PAYMENT_REVIEW";
-            paymentStatus = "REVIEW";
+            orderStatus = OrderStatus.PAYMENT_REVIEW;
+            paymentStatus = PaymentStatus.REVIEW;
             reviewPaymentId = id;
             return false;
         }
         paymentId = id;
-        paymentStatus = "PAID";
-        orderStatus = "PAID";
+        paymentStatus = PaymentStatus.PAID;
+        orderStatus = OrderStatus.PAID;
         return true;
     }
 
     public boolean acceptRefund(PaymentId id, BigDecimal amount, String currency) {
         if (!"VND".equals(currency) || amount == null || amount.compareTo(getTotal()) != 0)
             throw new AppException(ErrorCode.BAD_REQUEST, "Refund amount or currency mismatch");
-        if (!id.equals(paymentId) || "REFUNDED".equals(paymentStatus))
+        if (!id.equals(paymentId) || paymentStatus == PaymentStatus.REFUNDED)
             return false;
-        paymentStatus = "REFUNDED";
-        orderStatus = "REFUNDED";
+        paymentStatus = PaymentStatus.REFUNDED;
+        orderStatus = OrderStatus.REFUNDED;
         return true;
     }
 
@@ -243,11 +268,11 @@ public class Order {
         return paymentMethod;
     }
 
-    public String getPaymentStatus() {
+    public PaymentStatus getPaymentStatus() {
         return paymentStatus;
     }
 
-    public String getOrderStatus() {
+    public OrderStatus getOrderStatus() {
         return orderStatus;
     }
 

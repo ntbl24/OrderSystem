@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: cart-service
+  datasource:
+    url: "jdbc:/postgresql://localhost:5432/cart"
+    username: "root"
+    password: "root"
+  jpa:
+    hibernate:
+      ddl-auto: true
+server:
+  port: 8082
+  servlet:
+    context-path: /cart
+app:
+  services:
+    product:
+      url: http://localhost:8081/api/v1/product

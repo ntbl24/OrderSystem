@@ -1,10 +1,10 @@
 package com.abug.product.application.usecase;
 
-import com.abug.common.exception.AppException;
-import com.abug.common.exception.ErrorCode;
-import com.abug.product.application.port.in.ProductCommand;
+import com.abug.product.application.port.in.command.ProductCommand;
 import com.abug.product.application.port.in.UpdateProductUseCase;
 import com.abug.product.application.port.out.ProductRepository;
+import com.abug.product.common.exception.AppException;
+import com.abug.product.common.exception.ErrorCode;
 import com.abug.product.domain.Product;
 import com.abug.product.domain.ProductDetails;
 import com.abug.product.domain.ProductId;

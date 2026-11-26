@@ -1,9 +1,9 @@
 package com.abug.product.application.usecase;
 
 import com.abug.product.application.port.in.ProductStockUseCase;
-import com.abug.product.application.port.in.ReserveCommand;
-import com.abug.product.application.port.in.ReserveResult;
-import com.abug.product.application.port.in.SettleCommand;
+import com.abug.product.application.port.in.command.ReserveCommand;
+import com.abug.product.application.dto.ReserveResult;
+import com.abug.product.application.port.in.command.SettleCommand;
 import com.abug.product.application.port.out.ProductRepository;
 import com.abug.product.common.exception.AppException;
 import com.abug.product.common.exception.ErrorCode;

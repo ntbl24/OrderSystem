@@ -1,6 +1,6 @@
 package com.abug.product.infrastructure.web.dto;
 
-import com.abug.product.application.port.in.ReserveResult;
+import com.abug.product.application.dto.ReserveResult;
 
 import java.math.BigDecimal;
 import java.util.List;

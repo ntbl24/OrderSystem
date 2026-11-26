@@ -3,7 +3,7 @@ package com.abug.chat_service.infrastructure.web.rest.controller.dto;
 import com.abug.chat_service.application.dto.CreateChatMessageResult;
 import com.abug.chat_service.application.dto.QueryChatMessagesResult;
 import com.abug.chat_service.domain.ChatMessage;
-import com.abug.chat_service.domain.UserId;
+import com.abug.chat_service.domain.valueobject.UserId;
 
 import java.time.Instant;
 import java.util.List;
