@@ -78,10 +78,10 @@ public class IdentityPersistenceMapper {
     }
 
     public static OutboxEventEntity entity(OutboxEvent outboxEvent){
-        return OutboxEventEntity.create(outboxEvent.getId().value(), outboxEvent.getAggregateId(), outboxEvent.getAggregateType(), outboxEvent.getEventType(), outboxEvent.getPayload(), outboxEvent.isPublished());
+        return OutboxEventEntity.create(outboxEvent.getId().value(), outboxEvent.getAggregateId(), outboxEvent.getAggregateType(), outboxEvent.getEventType(), outboxEvent.getTopic(), outboxEvent.getPayload(), outboxEvent.isPublished());
     }
 
     public static OutboxEvent domain(OutboxEventEntity entity){
-        return OutboxEvent.create(EventId.of(entity.getId()), entity.getAggregateId(), entity.getAggregateType(), entity.getEventType(), entity.getPayload(), entity.isPublished());
+        return OutboxEvent.create(EventId.of(entity.getId()), entity.getAggregateId(), entity.getAggregateType(), entity.getEventType(), entity.getTopic(), entity.getPayload(), entity.isPublished());
     }
 }

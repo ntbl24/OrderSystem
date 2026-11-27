@@ -26,7 +26,7 @@ public class OutboxPublisher {
 
         for (OutboxEvent event: events){
             try{
-                kafkaTemplate.send("notification-delivery", event.getAggregateId().toString(), objectMapper.readValue(event.getPayload(), NotificationEvent.class)).get();
+                kafkaTemplate.send(event.getTopic(), event.getAggregateId().toString(), event.getPayload()).get();
 
                 event.markPublished();
                 outboxRepository.save(event);

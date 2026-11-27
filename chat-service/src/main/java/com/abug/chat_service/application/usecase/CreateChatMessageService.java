@@ -1,8 +1,10 @@
 package com.abug.chat_service.application.usecase;
 
 import com.abug.chat_service.application.dto.CreateChatMessageResult;
+import com.abug.chat_service.application.dto.Message;
 import com.abug.chat_service.application.port.in.CreateChatMessageUseCase;
 import com.abug.chat_service.application.port.in.command.CreateChatMessageCommand;
+import com.abug.chat_service.application.port.in.command.SendMessageCommand;
 import com.abug.chat_service.application.port.out.ChatMessageRepository;
 import com.abug.chat_service.application.port.out.ConversationRepository;
 import com.abug.chat_service.application.port.out.CurrentUserPort;
@@ -28,7 +30,6 @@ public class CreateChatMessageService implements CreateChatMessageUseCase {
     private final ChatMessageRepository chatMessageRepository;
     private final ProfileUserPort profileUserPort;
     private final SendMessageService sendMessageService;
-    private final ObjectMapper objectMapper;
 
     @Override
     public CreateChatMessageResult create(CreateChatMessageCommand command) {
@@ -46,11 +47,17 @@ public class CreateChatMessageService implements CreateChatMessageUseCase {
 
         ChatMessage chatMessage = ChatMessage.create(command.conversationId(), command.message(), userInfo);
         chatMessage = chatMessageRepository.save(chatMessage);
-        String message = objectMapper.writeValueAsString(chatMessage);
 
         List<UserId> userIds = conversation.getParticipants().stream().map(ParticipantInfo::getUserId).toList();
 
-        sendMessageService.sendMessageToUserId(userIds, message);
+        Message message = Message.builder()
+                .conversationId(chatMessage.getConversationId().toString())
+                .message(command.message())
+                .sender(chatMessage.getSender())
+                .createdDate(chatMessage.getCreatedDate())
+                .build();
+
+        sendMessageService.sendMessageToUserId(new SendMessageCommand(userIds, message));
         return new CreateChatMessageResult(userId, chatMessage);
     }
 }

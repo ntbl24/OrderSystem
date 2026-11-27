@@ -31,7 +31,11 @@ public class SecurityConfig {
             "/auth/token",
             "/auth/introspect",
             "/auth/logout",
-            "/auth/refresh"
+            "/auth/refresh",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
     };
 
 

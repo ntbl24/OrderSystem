@@ -25,18 +25,12 @@ public enum ErrorCode {
 
     // 1004: Lỗi không tìm thấy tài nguyên - dùng chung 1 mã 1004 (HTTP 404)
     RESOURCE_NOT_FOUND(-1008, "Resource not found", HttpStatus.NOT_FOUND),
-    PRODUCT_NOT_FOUND(-1008, "Product not found", HttpStatus.NOT_FOUND),
-    CART_NOT_FOUND(-1008, "Cart not found", HttpStatus.NOT_FOUND),
-    ORDER_NOT_FOUND(-1008, "Order not found", HttpStatus.NOT_FOUND),
-    PAYMENT_NOT_FOUND(-1008, "Payment not found", HttpStatus.NOT_FOUND),
     USER_NOT_FOUND(-1008, "User not found", HttpStatus.NOT_FOUND),
-    SHIPMENT_NOT_FOUND(-1008, "Shipment not found", HttpStatus.NOT_FOUND),
+    ROLE_NOT_FOUND(-1008, "role not found", HttpStatus.NOT_FOUND),
     USER_NOT_EXISTED(-1008, "User not existed", HttpStatus.NOT_FOUND),
 
     // 1005: Lỗi xung đột / Đã tồn tại / Concurrency - dùng chung 1 mã 1005 (HTTP 409)
     CONFLICT(-1009, "Conflicting operation", HttpStatus.CONFLICT),
-    PRODUCT_EXISTED(-1010, "Product already existed", HttpStatus.CONFLICT),
-    CART_EXISTED(-1010, "Cart already exists", HttpStatus.CONFLICT),
     USER_EXISTED(-1010, "User already exists", HttpStatus.CONFLICT),
     IDEMPOTENCY_CONFLICT(-1011, "Conflicting or concurrent operation; retry with the same idempotency key", HttpStatus.CONFLICT),
     ;

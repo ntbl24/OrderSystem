@@ -28,6 +28,9 @@ public class OutboxEventEntity {
     @Column(name = "event_type", nullable = false)
     private String eventType;
 
+    @Column(name = "topic")
+    private String topic;
+
     @Column(name = "payload", nullable = false)
     private String payload;
 
@@ -38,12 +41,13 @@ public class OutboxEventEntity {
     @CreationTimestamp
     private Instant createdAt;
 
-    public static OutboxEventEntity create(UUID id, UUID aggregateId, String aggregateType, String eventType, String payload, boolean published) {
+    public static OutboxEventEntity create(UUID id, UUID aggregateId, String aggregateType, String eventType, String topic, String payload, boolean published) {
         OutboxEventEntity outboxEvent = new OutboxEventEntity();
         outboxEvent.id = id;
         outboxEvent.aggregateId = aggregateId;
         outboxEvent.aggregateType = aggregateType;
         outboxEvent.eventType = eventType;
+        outboxEvent.topic = topic;
         outboxEvent.payload = payload;
         outboxEvent.published = published;
         return outboxEvent;

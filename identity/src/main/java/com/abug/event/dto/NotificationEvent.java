@@ -7,17 +7,18 @@ import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class NotificationEvent {
-    private String eventId;
+public record NotificationEvent(
+        String eventId,
+        String channel,
+        String recipient,
+        String templateCode,
+        Map<String, Object> param,
+        String subject,
+        String body
+) implements IntegrationEvent {
 
-    private String channel;
-    private String recipient;
-    private String templateCode;
-    private Map<String, Object> param;
-    private String subject;
-    private String body;
+    @Override
+    public String eventType() {
+        return "NotificationRequest";
+    }
 }

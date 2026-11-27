@@ -17,6 +17,6 @@ public class NotificationController {
 
     @KafkaListener(topics = "notification-delivery")
     public void listenNotificationDelivery(NotificationEvent event){
-        deliverNotificationUseCase.deliver(event);
+        deliverNotificationUseCase.consume(event);
     }
 }

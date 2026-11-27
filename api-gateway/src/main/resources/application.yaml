@@ -70,3 +70,41 @@ spring:
               - Path=${app.api-prefix}/chat/**
             filters:
               - StripPrefix=2
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Identity Service
+        url: /api/v1/identity/v3/api-docs
+
+      - name: Product Service
+        url: /api/v1/product/v3/api-docs
+
+      - name: Cart Service
+        url: /api/v1/cart/v3/api-docs
+
+      - name: Order Service
+        url: /api/v1/order/v3/api-docs
+
+      - name: Payment Service
+        url: /api/v1/payment/v3/api-docs
+
+      - name: Shipment Service
+        url: /api/v1/shipment/v3/api-docs
+
+      - name: Notification Service
+        url: /api/v1/notification/v3/api-docs
+
+      - name: File Service
+        url: /api/v1/file/v3/api-docs
+
+      - name: Profile Service
+        url: /api/v1/profile/v3/api-docs
+
+      - name: Chat Service
+        url: /api/v1/chat/v3/api-docs
+
+    urls-primary-name: Identity Service
+logging:
+  level:
+    org.springframework.web.servlet.DispatcherServlet: DEBUG

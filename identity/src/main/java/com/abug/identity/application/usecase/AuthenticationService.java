@@ -89,9 +89,9 @@ public class AuthenticationService implements AuthenticationUseCase {
 
         invalidatedTokenRepository.save(invalidatedToken);
 
-        var username = signedJWT.getJWTClaimsSet().getSubject();
+        UserId userId = UserId.of(signedJWT.getJWTClaimsSet().getSubject());
 
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
 
         return generateToken(user);
     }
